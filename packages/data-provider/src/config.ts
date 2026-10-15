@@ -3122,6 +3122,27 @@ export type TOpenIdDiscoveryConfig = z.infer<typeof openIdDiscoverySchema>;
 /** Maximum CAS attempts per ACL document, including the initial attempt. */
 export const permissionWriteAttemptsSchema = z.number().int().min(1).max(100).default(3);
 
+export const mcpFileTransferSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    maxFiles: z.number().int().positive().max(100).default(10),
+    maxFileBytes: z
+      .number()
+      .int()
+      .positive()
+      .max(100 * 1024 * 1024)
+      .default(20 * 1024 * 1024),
+    maxTotalBytes: z
+      .number()
+      .int()
+      .positive()
+      .max(100 * 1024 * 1024)
+      .default(50 * 1024 * 1024),
+  })
+  .default({});
+
+export type TMCPFileTransferPolicy = z.infer<typeof mcpFileTransferSchema>;
+
 export const configSchema = z.object({
   version: z.string(),
   permissions: z.object({ maxWriteAttempts: permissionWriteAttemptsSchema }).optional(),
@@ -3139,6 +3160,7 @@ export const configSchema = z.object({
   mcpServers: MCPServersSchema.optional(),
   mcpSettings: z
     .object({
+      fileTransfer: mcpFileTransferSchema,
       allowedDomains: z.array(z.string()).optional(),
       allowedAddresses: allowedAddressesSchema,
       catalogRecovery: z

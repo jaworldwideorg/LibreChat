@@ -1,6 +1,7 @@
 const { logger, getTenantId } = require('@librechat/data-schemas');
 const { Calculator, createSearchTool, createCodeExecutionTool } = require('@librechat/agents');
 const {
+  createMCPFileTransfer,
   checkAccess,
   toolkitParent,
   toolRolePermissions,
@@ -63,6 +64,11 @@ const {
   resolveCollisionAuditNames,
 } = require('~/server/services/MCP');
 const { getMCPRequestContext } = require('~/server/services/MCPRequestContext');
+const { getStrategyFunctions } = require('~/server/services/Files/strategies');
+const { provisionToCodeEnv } = require('~/server/services/Files/provision');
+const { getRetentionExpiry } = require('~/server/services/Files/retention');
+const { deleteCodeEnvFile } = require('~/server/services/Files/Code/crud');
+const { createFile, deleteFile, updateFileCodeEnvRef } = require('~/models');
 const { createOpenIDSessionTokenProvider } = require('~/server/services/OpenIDSessionRefresh');
 const { createFileSearchTool, primeFiles: primeSearchFiles } = require('./fileSearch');
 const { primeFiles: primeCodeFiles } = require('~/server/services/Files/Code/process');
@@ -661,6 +667,19 @@ const loadTools = async ({
       createTool: createMCPTool,
       getAvailableTools: getMCPServerTools,
       context: {
+        transferMCPFiles: createMCPFileTransfer({
+          req: options.req,
+          source: fileStrategy,
+          route: options.codeExecutionContext,
+          canExecuteCode: () => checkCapability(options.req, AgentCapabilities.execute_code),
+          getStrategyFunctions,
+          createFile,
+          deleteFile,
+          updateCodeEnvRef: updateFileCodeEnvRef,
+          provisionToCodeEnv,
+          getRetentionExpiry,
+          deleteCodeEnvFile,
+        }),
         mcpPermissionContext,
         signal,
         user: safeUser,

@@ -13,6 +13,7 @@ import type {
 import type { AuthIdentityContext } from '~/utils/identity';
 import type { GraphTokenResolver } from '~/utils/graph';
 import type { FlowStateManager } from '~/flow/manager';
+import type { MCPBoundFileTransfer } from './files';
 import type { MCPOAuthTokens } from './oauth';
 import type { RequestBody } from '~/types';
 import type * as t from './types';
@@ -45,6 +46,7 @@ import { OAuthLifecycleRelay } from './oauth/pending';
 import { preProcessGraphTokens } from '~/utils/graph';
 import { isOwnedAbortError } from '~/utils/errors';
 import { withMCPRequestSignal } from './signal';
+import { mergeMCPFileTransfer } from './files';
 import { formatToolContent } from './parsers';
 import { MCPConnection } from './connection';
 import { mcpConfig } from './mcpConfig';
@@ -1122,6 +1124,7 @@ Please follow these instructions when using tools from the respective MCP server
     oboIdentityContext,
     onOAuthCredentialsChanged,
     onOAuthCredentialsChanging,
+    transferFiles,
   }: {
     user?: IUser;
     serverName: string;
@@ -1146,6 +1149,7 @@ Please follow these instructions when using tools from the respective MCP server
     oboIdentityContext?: AuthIdentityContext;
     onOAuthCredentialsChanged?: t.UserConnectionContext['onOAuthCredentialsChanged'];
     onOAuthCredentialsChanging?: t.UserConnectionContext['onOAuthCredentialsChanging'];
+    transferFiles?: MCPBoundFileTransfer;
   }): Promise<t.FormattedToolResponse> {
     const userId = user?.id;
     const logPrefix = userId ? `[MCP][User: ${userId}][${serverName}]` : `[MCP][${serverName}]`;
@@ -1652,7 +1656,12 @@ Please follow these instructions when using tools from the respective MCP server
           await this.updateUserLastActivity(userId);
         }
         this.checkIdleConnections();
-        return formatToolContent(result as t.MCPToolCallResponse, provider);
+        const rawToolResult = result as t.MCPToolCallResponse;
+        const transferred = transferFiles ? await transferFiles(rawToolResult) : undefined;
+        const toolResult = transferred
+          ? { ...rawToolResult, content: transferred.content }
+          : rawToolResult;
+        return mergeMCPFileTransfer(formatToolContent(toolResult, provider), transferred);
       } catch (error) {
         if (error instanceof OAuthRecoveryTakeoverRequired) {
           recoveryTakeoverConsumed = true;

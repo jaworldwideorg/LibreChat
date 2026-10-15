@@ -35,6 +35,7 @@ const {
   captureSubagentIdentity,
   collectToolCallIds,
   createToolTimingAdapter,
+  enqueueMCPFileAttachments,
 } = require('@librechat/api');
 const { processFileCitations } = require('~/server/services/Files/Citations');
 const { processCodeOutput, runPreviewFinalize } = require('~/server/services/Files/Code/process');
@@ -987,6 +988,17 @@ function createToolEndCallback({ req, res, artifactPromises, streamId = null, jo
       return;
     }
 
+    enqueueMCPFileAttachments({
+      artifact: output.artifact,
+      artifactPromises,
+      userId: req.user?.id,
+      messageId: metadata.run_id,
+      conversationId: metadata.thread_id,
+      toolCallId: output.tool_call_id,
+      getOwnership: () => getAttachmentOwnership(metadata),
+      emitAttachment: createAttachmentEmitter({ res, streamId, jobCreatedAt }),
+    });
+
     if (output.artifact[Tools.file_search]) {
       artifactPromises.push(
         (async () => {
@@ -1358,6 +1370,18 @@ function createResponsesToolEndCallback({ req, res, tracker, artifactPromises })
     if (!output.artifact) {
       return;
     }
+
+    enqueueMCPFileAttachments({
+      artifact: output.artifact,
+      artifactPromises,
+      userId: req.user?.id,
+      messageId: metadata.run_id,
+      conversationId: metadata.thread_id,
+      toolCallId: output.tool_call_id,
+      getOwnership: () => getAttachmentOwnership(metadata),
+      canEmit: () => isStreamWritable(res, null),
+      emitAttachment: (attachment) => writeResponsesAttachment(res, tracker, attachment, metadata),
+    });
 
     if (output.artifact[Tools.file_search]) {
       artifactPromises.push(

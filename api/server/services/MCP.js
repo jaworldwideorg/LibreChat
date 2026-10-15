@@ -3,6 +3,7 @@ const { logger, getTenantId } = require('@librechat/data-schemas');
 const { Providers, Constants: AgentConstants } = require('@librechat/agents');
 const {
   sendEvent,
+  bindMCPFileTransfer,
   PENDING_STALE_MS,
   MCPOAuthHandler,
   MCPTokenStorage,
@@ -877,6 +878,7 @@ async function reconnectServer({
  * @returns { Promise<Array<typeof tool | { _call: (toolInput: Object | string) => unknown}>> } An object with `_call` method to execute the tool input.
  */
 async function createMCPTools({
+  transferMCPFiles,
   res,
   mcpPermissionContext,
   user,
@@ -958,6 +960,7 @@ async function createMCPTools({
   );
   for (const tool of result.tools) {
     const toolInstance = await createMCPTool({
+      transferMCPFiles,
       res,
       mcpPermissionContext,
       user,
@@ -1013,6 +1016,7 @@ async function createMCPTools({
  * @returns { Promise<typeof tool | { _call: (toolInput: Object | string) => unknown}> } An object with `_call` method to execute the tool input.
  */
 async function createMCPTool({
+  transferMCPFiles,
   res,
   mcpPermissionContext,
   user,
@@ -1185,6 +1189,7 @@ async function createMCPTool({
   }
 
   return createToolInstance({
+    transferMCPFiles,
     res,
     mcpPermissionContext,
     user,
@@ -1215,6 +1220,7 @@ async function createMCPTool({
 }
 
 function createToolInstance({
+  transferMCPFiles,
   res,
   mcpPermissionContext,
   user: capturedUser = null,
@@ -1321,6 +1327,12 @@ function createToolInstance({
        * as the jwt-bearer assertion.
        */
       const result = await mcpManager.callTool({
+        transferFiles: bindMCPFileTransfer(transferMCPFiles, {
+          userId,
+          signal: derivedSignal,
+          files: config?.toolCall?._injected_files,
+          route: config?.configurable?.codeExecutionContext,
+        }),
         serverName,
         serverConfig: capturedServerConfig,
         /** The upstream server never sees stripped names — a key that dropped
