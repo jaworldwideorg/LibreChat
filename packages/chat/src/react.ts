@@ -13,3 +13,5 @@ export type {
   MessagePartsMarkdownProps,
   MessagePartsUserTextPreferences,
 } from './react/host';
+export { isSubmittingFamily, anySubmittingAtom, resetSubmitting } from './react/submission';
+export type { PaneIndex } from './react/submission';

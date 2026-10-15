@@ -202,30 +202,6 @@ const textByIndex = atomFamily<string, string | number>({
   default: '',
 });
 
-const isSubmittingFamily = atomFamily({
-  key: 'isSubmittingByIndex',
-  default: false,
-  effects: [
-    ({ onSet, node }) => {
-      onSet(async (newValue) => {
-        const key = Number(node.key.split(Constants.COMMON_DIVIDER)[1]);
-        logger.log('message_stream', 'Recoil Effect: Setting isSubmittingByIndex', {
-          key,
-          newValue,
-        });
-      });
-    },
-  ],
-});
-
-const anySubmittingSelector = selector<boolean>({
-  key: 'anySubmittingSelector',
-  get: ({ get }) => {
-    const keys = get(conversationKeysAtom);
-    return keys.some((key) => get(isSubmittingFamily(key)) === true);
-  },
-});
-
 const optionSettingsFamily = atomFamily<TOptionSettings, string | number>({
   key: 'optionSettingsByIndex',
   default: {},
@@ -485,10 +461,8 @@ export default {
   presetByIndex,
   submissionByIndex,
   textByIndex,
-  isSubmittingFamily,
   optionSettingsFamily,
   showPopoverFamily,
-  anySubmittingSelector,
   allConversationsSelector,
   conversationIdByIndex,
   conversationEndpointByIndex,

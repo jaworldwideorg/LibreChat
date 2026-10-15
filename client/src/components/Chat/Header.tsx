@@ -1,6 +1,8 @@
 import { memo, useMemo } from 'react';
+import { useAtomValue } from 'jotai';
 import { useRecoilValue } from 'recoil';
 import { useParams } from 'react-router-dom';
+import { isSubmittingFamily } from '@librechat/chat/react';
 import {
   getConfigDefaults,
   Constants,
@@ -38,7 +40,7 @@ function Header({
 }) {
   const { data: startupConfig } = useGetStartupConfig();
   const navVisible = useRecoilValue(store.sidebarExpanded);
-  const isSubmitting = useRecoilValue(store.isSubmittingFamily(0));
+  const isSubmitting = useAtomValue(isSubmittingFamily(0));
   const isSmallScreen = useDrawerViewport();
 
   /** The mobile row only offers a new chat when there is one to leave. Read

@@ -123,7 +123,6 @@ jest.mock('~/Providers/AgentsMapContext', () => ({
 jest.mock('~/store', () => ({
   __esModule: true,
   default: {
-    isSubmittingFamily: () => 'isSubmitting',
     pendingManualSkillsByConvoId: () => 'pendingManualSkills',
     pendingQuotesByConvoId: () => 'pendingQuotes',
     messagesSiblingIdxFamily: () => 'messagesSiblingIdx',

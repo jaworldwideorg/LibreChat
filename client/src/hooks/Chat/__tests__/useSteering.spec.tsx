@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, render, renderHook, waitFor } from '@testing-library/react';
+import { isSubmittingFamily, resetSubmitting } from '@librechat/chat/react';
 import { RecoilRoot, useRecoilValue, useSetRecoilState, type MutableSnapshot } from 'recoil';
 import {
   getDefaultStore,
@@ -208,6 +209,10 @@ function sendFromQueue(
 
 beforeEach(() => resetQueueFamilies());
 
+afterEach(() => {
+  resetSubmitting(getDefaultStore());
+});
+
 describe('useSteering', () => {
   beforeEach(() => {
     getDefaultStore().set(duringRunActionAtom, 'steer');
@@ -286,9 +291,9 @@ describe('useSteering', () => {
       const ask = jest.fn();
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <RecoilRoot
-          initializeState={withActiveGeneration(({ set }) => {
+          initializeState={withActiveGeneration(() => {
             getDefaultStore().set(queuedMessagesByConvoId(CONVO_ID), [item]);
-            set(store.isSubmittingFamily(0), false);
+            getDefaultStore().set(isSubmittingFamily(0), false);
           })}
         >
           {children}
@@ -377,9 +382,9 @@ describe('useSteering', () => {
       const ask = jest.fn();
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <RecoilRoot
-          initializeState={withActiveGeneration(({ set }) => {
+          initializeState={withActiveGeneration(() => {
             getDefaultStore().set(queuedMessagesByConvoId(CONVO_ID), [held, first, second]);
-            set(store.isSubmittingFamily(0), false);
+            getDefaultStore().set(isSubmittingFamily(0), false);
           })}
         >
           {children}
@@ -1594,8 +1599,8 @@ describe('useSteering', () => {
       const sendNow = jest.fn();
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <RecoilRoot
-          initializeState={withActiveGeneration(({ set }) => {
-            set(store.isSubmittingFamily(0), false);
+          initializeState={withActiveGeneration(() => {
+            getDefaultStore().set(isSubmittingFamily(0), false);
             getDefaultStore().set(runEndByIndex(0), {
               conversationId: CONVO_ID,
               outcome: 'completed',

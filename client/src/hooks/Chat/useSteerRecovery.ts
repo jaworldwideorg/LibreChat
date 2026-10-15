@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useStore } from 'jotai';
 import { useRecoilCallback } from 'recoil';
+import { isSubmittingFamily } from '@librechat/chat/react';
 import type { Snapshot } from 'recoil';
 import type { PendingSteer } from '~/hooks/Chat/queue';
 import {
@@ -46,7 +47,7 @@ export default function useSteerRecovery(conversationId: string) {
         /* Comparison mode can hold one conversation in several panes, and only
            the pane that owns the run is submitting: any live pane means the
            run is still going, whichever slot comes first. */
-        if (snapshot.getLoadable(store.isSubmittingFamily(key)).getValue() === true) {
+        if (jotaiStore.get(isSubmittingFamily(key)) === true) {
           return false;
         }
         held = true;
@@ -56,7 +57,7 @@ export default function useSteerRecovery(conversationId: string) {
          same mistake as reading the unmount as the end, one step further out. */
       return held;
     },
-    [conversationId],
+    [conversationId, jotaiStore],
   );
 
   const markStatus = useRecoilCallback(

@@ -3,6 +3,7 @@ import { useRecoilValue } from 'recoil';
 import { useStore, useAtomValue } from 'jotai';
 import { QueryKeys } from 'librechat-data-provider';
 import { useQueryClient } from '@tanstack/react-query';
+import { isSubmittingFamily } from '@librechat/chat/react';
 import type { TMessage, TAgentQueuedTurnReceipt } from 'librechat-data-provider';
 import type { StreamStatusResponse } from '~/data-provider/SSE/queries';
 import type { QueuedMessage, RunEnd } from '~/hooks/Chat/queue';
@@ -89,7 +90,7 @@ export default function useQueuedTurnReveal(
   const queryClient = useQueryClient();
   const revealKey = conversationId ?? '';
   const reveal = useAtomValue(revealedQueuedTurnFamily(revealKey));
-  const isSubmitting = useRecoilValue(store.isSubmittingFamily(index));
+  const isSubmitting = useAtomValue(isSubmittingFamily(index));
   const activeEpoch = useRecoilValue(store.activeGenerationCreatedAtByConvoId(revealKey));
   const readHandoff = useCallback(
     (intent: RevealedQueuedTurn) => {
@@ -99,6 +100,7 @@ export default function useQueuedTurnReveal(
       const status = queryClient.getQueryData<StreamStatusResponse>(
         streamStatusQueryKey(revealKey),
       );
+      const submitting = jotaiStore.get(isSubmittingFamily(index));
       let generationCreatedAt = intent.generationCreatedAt;
       let waiting = false;
       for (const receipt of receipts ?? []) {
@@ -120,7 +122,7 @@ export default function useQueuedTurnReveal(
         settled:
           (receipts != null && shouldRollbackReveal(receipts, intent)) ||
           (generationCreatedAt != null &&
-            ((isSubmitting && activeEpoch != null && activeEpoch > generationCreatedAt) ||
+            ((submitting && activeEpoch != null && activeEpoch > generationCreatedAt) ||
               (!waiting &&
                 status?.active === false &&
                 (status.status === 'complete' ||
@@ -130,7 +132,7 @@ export default function useQueuedTurnReveal(
                 status.createdAt > generationCreatedAt))),
       };
     },
-    [queryClient, revealKey, isSubmitting, activeEpoch],
+    [queryClient, jotaiStore, index, revealKey, activeEpoch],
   );
   const subscribe = useCallback(
     (notify: () => void) =>
@@ -203,7 +205,7 @@ export default function useQueuedTurnReveal(
     } else if (handoff.generationCreatedAt !== reveal.generationCreatedAt) {
       jotaiStore.set(family, { ...reveal, generationCreatedAt: handoff.generationCreatedAt });
     }
-  }, [jotaiStore, revealKey, reveal, readHandoff, handoffVersion]);
+  }, [jotaiStore, revealKey, reveal, readHandoff, handoffVersion, isSubmitting]);
 
   return revealQueuedTurn;
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useStore, useAtom, useSetAtom } from 'jotai';
 import { useQueryClient } from '@tanstack/react-query';
+import { isSubmittingFamily } from '@librechat/chat/react';
+import { useStore, useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useSetRecoilState, useRecoilValue, useRecoilCallback } from 'recoil';
 import {
   Constants,
@@ -306,7 +307,7 @@ export default function useResumeOnLoad(
   const setSubmission = useSetRecoilState(store.submissionByIndex(runIndex));
   const setSubmissionStart = useSetAtom(submissionStartFamily(runIndex));
   const currentSubmission = useRecoilValue(store.submissionByIndex(runIndex));
-  const isSubmitting = useRecoilValue(store.isSubmittingFamily(runIndex));
+  const isSubmitting = useAtomValue(isSubmittingFamily(runIndex));
   const attachedGenerationCreatedAt = useRecoilValue(
     store.activeGenerationCreatedAtByConvoId(conversationId ?? ''),
   );

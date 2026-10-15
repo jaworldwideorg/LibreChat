@@ -1,5 +1,6 @@
 import { useStore } from 'jotai';
 import { useRecoilCallback } from 'recoil';
+import { isSubmittingFamily } from '@librechat/chat/react';
 import {
   getReasoningStateKey,
   clearPendingReasoningOverrides,
@@ -52,7 +53,7 @@ export default function useClearStates() {
           jotaiStore.set(showStopButtonByIndex(key), false);
           jotaiStore.set(abortScrollFamily(key), false);
           jotaiStore.set(submissionStartFamily(key), null);
-          reset(store.isSubmittingFamily(key));
+          jotaiStore.set(isSubmittingFamily(key), false);
           reset(store.optionSettingsFamily(key));
           reset(store.showPopoverFamily(key));
           reset(store.showMentionPopoverFamily(key));

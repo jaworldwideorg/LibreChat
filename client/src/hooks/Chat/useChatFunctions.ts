@@ -4,7 +4,8 @@ import { cloneDeep } from 'lodash';
 import { useStore, useSetAtom } from 'jotai';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSetRecoilState, useRecoilValue, useRecoilCallback } from 'recoil';
+import { isSubmittingFamily } from '@librechat/chat/react';
+import { useRecoilValue, useRecoilCallback } from 'recoil';
 import {
   Constants,
   QueryKeys,
@@ -255,7 +256,7 @@ export default function useChatFunctions({
   const agentsMap = useAgentsMapContext();
   const { isTemporary, config, auth } = useChatSettings();
   const { getExpiry } = useUserKey(immutableConversation?.endpoint ?? '');
-  const setIsSubmitting = useSetRecoilState(store.isSubmittingFamily(index));
+  const setIsSubmitting = useSetAtom(isSubmittingFamily(index));
   const setSubmissionStart = useSetAtom(submissionStartFamily(index));
   const setShowStopButton = useSetAtom(showStopButtonByIndex(index));
   const focusRegeneratedResponse = useFocusRegeneratedResponse();

@@ -1,6 +1,7 @@
 import React from 'react';
-import { getDefaultStore, useAtomValue } from 'jotai';
 import { act, render, renderHook } from '@testing-library/react';
+import { getDefaultStore, useAtomValue, useSetAtom } from 'jotai';
+import { isSubmittingFamily, resetSubmitting } from '@librechat/chat/react';
 import { RecoilRoot, useRecoilValue, useSetRecoilState, type MutableSnapshot } from 'recoil';
 import type { RewakeDrain } from '~/Providers/ComposerRestoreContext';
 import {
@@ -32,7 +33,7 @@ const CONVO_ID = 'convo-steer-recovery';
 const seedRun = (snapshot: MutableSnapshot, submitting: boolean) => {
   snapshot.set(store.conversationKeysAtom, [0]);
   snapshot.set(store.conversationByIndex(0), { conversationId: CONVO_ID } as never);
-  snapshot.set(store.isSubmittingFamily(0), submitting);
+  getDefaultStore().set(isSubmittingFamily(0), submitting);
 };
 
 /** Publishes a drain wake-up the way `ChatForm` does, so the retry path runs
@@ -72,6 +73,10 @@ function setup(initialize?: (snapshot: MutableSnapshot) => void, rewake?: Rewake
 }
 
 beforeEach(() => resetQueueFamilies());
+
+afterEach(() => {
+  resetSubmitting(getDefaultStore());
+});
 
 describe('useSteerRecovery', () => {
   beforeEach(() => {
@@ -400,7 +405,7 @@ describe('useSteerRecovery', () => {
       mockMutateAsync.mockResolvedValue({ steerId: 'srv-bound', preempt: false });
       const bind = async (generationProtocolVersion: 1 | 2) => {
         const { result, unmount } = setup(({ set }) => {
-          set(store.isSubmittingFamily(0), false);
+          getDefaultStore().set(isSubmittingFamily(0), false);
           set(store.pendingSteersByConvoId(CONVO_ID), [
             {
               steerId: `local-v${generationProtocolVersion}`,
@@ -517,7 +522,7 @@ describe('useSteerRecovery', () => {
       const Observer = () => {
         chips = useRecoilValue(store.pendingSteersByConvoId(CONVO_ID));
         queue = useAtomValue(queuedMessagesByConvoId(CONVO_ID));
-        setSubmitting = useSetRecoilState(store.isSubmittingFamily(0));
+        setSubmitting = useSetAtom(isSubmittingFamily(0));
         return null;
       };
       const Tree = ({ live }: { live: boolean }) => (
@@ -621,8 +626,8 @@ describe('useSteerRecovery', () => {
       const { result } = setup((snapshot) => {
         snapshot.set(store.conversationKeysAtom, [0, 1]);
         snapshot.set(store.conversationByIndex(1), { conversationId: CONVO_ID } as never);
-        snapshot.set(store.isSubmittingFamily(0), false);
-        snapshot.set(store.isSubmittingFamily(1), true);
+        getDefaultStore().set(isSubmittingFamily(0), false);
+        getDefaultStore().set(isSubmittingFamily(1), true);
         snapshot.set(store.pendingSteersByConvoId(CONVO_ID), [
           { steerId: 'local-pane', text: 'second pane owns it', status: 'failed', createdAt: 4 },
         ]);
@@ -897,7 +902,7 @@ describe('useSteerRecovery', () => {
       it('drops the chip without queueing when the apply event beat the ack', async () => {
         mockMutateAsync.mockResolvedValue(ack('srv-applied'));
         const { result } = setup(({ set }) => {
-          set(store.isSubmittingFamily(0), false);
+          getDefaultStore().set(isSubmittingFamily(0), false);
           set(store.appliedSteerIdsByConvoId(CONVO_ID), ['srv-applied']);
           set(store.pendingSteersByConvoId(CONVO_ID), [
             { steerId: 'local-applied', text: 'already injected', status: 'failed', createdAt: 3 },

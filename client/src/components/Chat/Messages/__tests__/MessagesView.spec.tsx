@@ -51,11 +51,11 @@ jest.mock('~/components/Chat/Subagents/surface', () => ({
   useChatSurface: () => ({ showScrollButton: false, maximizeChatSpace: mockMaximizeChatSpace }),
 }));
 
-jest.mock('~/store/autoScroll', () => ({ autoScrollAtom: {} }));
 jest.mock('~/store', () => ({
   __esModule: true,
-  default: { isSubmittingFamily: () => ({}) },
+  default: {},
 }));
+jest.mock('~/store/autoScroll', () => ({ autoScrollAtom: {} }));
 
 jest.mock('../Thread', () => ({
   get FLAT_THREAD() {

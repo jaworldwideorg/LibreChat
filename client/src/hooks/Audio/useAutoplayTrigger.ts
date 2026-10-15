@@ -1,5 +1,7 @@
+import { useAtomValue } from 'jotai';
 import { useRecoilValue } from 'recoil';
 import { getSpeechText } from 'librechat-data-provider';
+import { isSubmittingFamily } from '@librechat/chat/react';
 import type { TMessage } from 'librechat-data-provider';
 import { useLatestMessage } from '~/hooks/Messages/useLatestMessage';
 import store from '~/store';
@@ -19,7 +21,7 @@ export type TAutoplayTrigger = {
 export default function useAutoplayTrigger(index: string | number = 0): TAutoplayTrigger {
   const activeRunId = useRecoilValue(store.activeRunFamily(index));
   const audioRunId = useRecoilValue(store.audioRunFamily(index));
-  const isSubmitting = useRecoilValue(store.isSubmittingFamily(index));
+  const isSubmitting = useAtomValue(isSubmittingFamily(index));
   const latestMessage = useLatestMessage(index);
 
   const shouldPlay = !!(

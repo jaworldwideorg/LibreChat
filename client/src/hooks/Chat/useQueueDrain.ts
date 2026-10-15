@@ -1,6 +1,6 @@
 import { useRef, useEffect, useMemo, useCallback } from 'react';
-import { useRecoilValue } from 'recoil';
 import { useAtomValue, useStore } from 'jotai';
+import { isSubmittingFamily } from '@librechat/chat/react';
 import { Constants, DEFAULT_QUEUED_SEND_LOCK_TIMEOUT_MS } from 'librechat-data-provider';
 import type { DrainAfterAbort, QueuedMessage, QueuedMessageOrigin, RunEnd } from './queue';
 import type { QueueSendLock } from '~/utils/queueIntent';
@@ -25,7 +25,6 @@ import { useMarkFilesUsageMutation } from '~/data-provider';
 import { revealedQueuedTurnFamily } from '~/store/steer';
 import { mergeQueuedMessages } from '~/utils/queue';
 import { insertQueuedOrigin } from '~/utils/steer';
-import store from '~/store';
 
 /** Mirrors the server's per-request cap on a usage touch. */
 const QUEUE_USAGE_MAX_FILES = 10;
@@ -100,7 +99,7 @@ export default function useQueueDrain(
   const parkedRunEnd = useAtomValue(
     pendingRunEndByConvoId(activeConversationId ?? Constants.NEW_CONVO),
   );
-  const isSubmitting = useRecoilValue(store.isSubmittingFamily(index));
+  const isSubmitting = useAtomValue(isSubmittingFamily(index));
   /** Keyed by pane, because the contended resource is this pane's submission
    * slot: the rail's "Send now" reaches the same `ask` through the composer. */
   const sendLockKey = String(index);

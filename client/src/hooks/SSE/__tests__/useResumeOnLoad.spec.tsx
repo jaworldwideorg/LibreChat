@@ -1,8 +1,15 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { RecoilRoot, useRecoilValue, useSetRecoilState } from 'recoil';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Provider as JotaiProvider, createStore, useAtomValue } from 'jotai';
+import { isSubmittingFamily, resetSubmitting } from '@librechat/chat/react';
 import { Constants, ContentTypes, QueryKeys } from 'librechat-data-provider';
+import {
+  Provider as JotaiProvider,
+  createStore,
+  useAtomValue,
+  getDefaultStore,
+  useSetAtom,
+} from 'jotai';
 import type { Agents, TMessage, TConversation, TSubmission } from 'librechat-data-provider';
 import type { MutableSnapshot } from 'recoil';
 import type { ReactNode } from 'react';
@@ -156,7 +163,7 @@ function renderUseResumeOnLoad({
   const initializeState = (snapshot: MutableSnapshot) => {
     snapshot.set(store.conversationByIndex(0), buildConversation(conversationId));
     snapshot.set(store.submissionByIndex(0), submission);
-    snapshot.set(store.isSubmittingFamily(0), isSubmitting);
+    jotaiStore.set(isSubmittingFamily(0), isSubmitting);
     snapshot.set(
       store.activeGenerationCreatedAtByConvoId(conversationId),
       attachedGenerationCreatedAt,
@@ -169,7 +176,7 @@ function renderUseResumeOnLoad({
   const SubmissionProbe = () => {
     const currentSubmission = useRecoilValue(store.submissionByIndex(0));
     setSubmissionState = useSetRecoilState(store.submissionByIndex(0));
-    setIsSubmittingState = useSetRecoilState(store.isSubmittingFamily(0));
+    setIsSubmittingState = useSetAtom(isSubmittingFamily(0));
     setAttachedEpochState = useSetRecoilState(
       store.activeGenerationCreatedAtByConvoId(conversationId),
     );
@@ -230,6 +237,10 @@ function renderUseResumeOnLoad({
 }
 
 beforeEach(() => resetQueueFamilies());
+
+afterEach(() => {
+  resetSubmitting(getDefaultStore());
+});
 
 describe('useResumeOnLoad', () => {
   beforeEach(() => {

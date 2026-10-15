@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
+import { useAtomValue } from 'jotai';
 import { useRecoilValue } from 'recoil';
+import { isSubmittingFamily } from '@librechat/chat/react';
 import { useLatestMessage } from '~/hooks/Messages/useLatestMessage';
 import { getLatestText } from '~/utils';
 import store from '~/store';
@@ -29,7 +31,7 @@ interface ArtifactsProviderProps {
 }
 
 export function ArtifactsProvider({ children, value }: ArtifactsProviderProps) {
-  const isSubmitting = useRecoilValue(store.isSubmittingFamily(0));
+  const isSubmitting = useAtomValue(isSubmittingFamily(0));
   const latestMessage = useLatestMessage(0);
   const conversationId = useRecoilValue(store.conversationIdByIndex(0));
 
