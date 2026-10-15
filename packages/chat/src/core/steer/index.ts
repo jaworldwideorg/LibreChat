@@ -1,4 +1,5 @@
 export * from './ack';
+export * from './drain';
 export * from './errors';
 export * from './intent';
 export * from './pause';
