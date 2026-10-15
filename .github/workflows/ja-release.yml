@@ -1,0 +1,126 @@
+name: JA LibreChat release
+
+on:
+  push:
+    branches: [fixes/ja-v0.8.8-attachments]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the verified JA image to ACR (does not deploy ACA)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ja-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SCARF_ANALYTICS: 'false'
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+  IMAGE_NAME: librechat/api
+
+jobs:
+  verify:
+    if: github.repository == 'jaworldwideorg/LibreChat'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.16.0
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install locked dependencies and test parser
+        run: |
+          npm ci --no-audit
+          python -m pip install pypdf==6.16.1
+          cp api/test/.env.test.example api/test/.env.test
+      - name: Build release frontend and packages
+        run: npm run frontend
+      - name: Check changed workspaces and static rules
+        run: |
+          npm run static-checks -- --against v0.8.8
+          (cd packages/api && npx tsc --noEmit)
+          (cd packages/data-provider && npx tsc --noEmit)
+      - name: Test attachment handoff and session continuity
+        working-directory: packages/api
+        run: MCP_ATTACHMENT_TEST_PYTHON="$(command -v python)" npx jest src/mcp/files.spec.ts src/agents/__tests__/run-codeTools.test.ts --runInBand --coverage=false
+      - name: Test legacy host wiring
+        working-directory: api
+        run: npx jest server/controllers/agents/__tests__/callbacks.spec.js server/services/__tests__/MCP.spec.js app/clients/tools/util/handleTools.test.js --runInBand --coverage=false
+      - name: Test configuration contracts and migrations
+        run: |
+          (cd packages/data-provider && npx jest specs/config-schemas.spec.ts --runInBand --coverage=false)
+          npm run test:config -- --runInBand
+      - name: Audit dependencies against the accepted upstream baseline
+        run: |
+          node --test scripts/ja-audit.test.mjs
+          npm audit --omit=dev --json > ja-audit.json || test "$?" -eq 1
+          node scripts/ja-audit.mjs ja-audit.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ja-dependency-audit
+          path: ja-audit.json
+          if-no-files-found: ignore
+
+  container:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Log in with the project-scoped publisher token
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Stamp immutable build metadata
+        id: metadata
+        run: |
+          printf 'date=%s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+      - name: Build and optionally publish the production API image
+        id: image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.multi
+          target: api-build
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:v0.8.8-ja.1
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          build-args: |
+            BUILD_COMMIT=${{ github.sha }}
+            BUILD_BRANCH=v0.8.8-ja.1
+            BUILD_DATE=${{ steps.metadata.outputs.date }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/jaworldwideorg/LibreChat
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=v0.8.8-ja.1
+          cache-from: type=gha,scope=ja-librechat-api
+          cache-to: type=gha,scope=ja-librechat-api,mode=max
+      - name: Record published digest
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          printf '%s/%s@%s\n' "$ACR_LOGIN_SERVER" "$IMAGE_NAME" "$DIGEST" > ja-image-reference.txt
+          cat ja-image-reference.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        with:
+          name: ja-image-reference
+          path: ja-image-reference.txt
