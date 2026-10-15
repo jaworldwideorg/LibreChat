@@ -13,11 +13,15 @@ let mockStartupConfig: Partial<TStartupConfig> | undefined;
 let mockUser: TUser | undefined;
 
 jest.mock('~/data-provider', () => ({
-  useGetStartupConfig: () => ({ data: mockStartupConfig }),
+  useGetStartupConfig: () => ({ data: mockStartupConfig, isFetched: mockStartupConfig != null }),
 }));
 
 jest.mock('~/hooks/AuthContext', () => ({
-  useAuthContext: () => ({ user: mockUser }),
+  useAuthContext: () => ({
+    user: mockUser,
+    token: mockUser ? 'token-1' : undefined,
+    isAuthenticated: mockUser != null,
+  }),
 }));
 
 const renderSettings = (initialize?: (snapshot: MutableSnapshot) => void) =>
@@ -77,6 +81,8 @@ describe('ChatSettingsProvider', () => {
     expect(result.current.settings.config).toEqual({
       feedbackEnabled: false,
       canRenameRunningChat: false,
+      loaded: false,
+      balanceEnabled: false,
     });
   });
 
@@ -85,6 +91,7 @@ describe('ChatSettingsProvider', () => {
     mockStartupConfig = {
       conversationTitleOwnershipVersion: 1,
       modelSpecs: { list: modelSpecs },
+      balance: { enabled: true },
       interface: {
         retentionMode: RetentionMode.EPHEMERAL,
         runningChatRename: true,
@@ -104,6 +111,8 @@ describe('ChatSettingsProvider', () => {
       queuedSendLockTimeoutMs: 1_000,
       queuedTurnReconciliationTimeoutMs: 2_000,
       steerArmConfirmationTimeoutMs: 3_000,
+      loaded: true,
+      balanceEnabled: true,
     });
   });
 
@@ -120,7 +129,11 @@ describe('ChatSettingsProvider', () => {
 
     const { result } = renderSettings();
 
-    expect(result.current.settings.auth.user).toBe(mockUser);
+    expect(result.current.settings.auth).toEqual({
+      user: mockUser,
+      token: 'token-1',
+      isAuthenticated: true,
+    });
   });
 
   it('falls back to the stock defaults without a host', () => {

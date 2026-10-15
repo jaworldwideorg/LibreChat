@@ -18,8 +18,8 @@ export default function ChatSettingsProvider({ children }: { children: ReactNode
   const resetVisibleArtifacts = useResetRecoilState(store.visibleArtifacts);
   const saveDrafts = useRecoilValue<boolean>(store.saveDrafts);
   const [isTemporary, setIsTemporary] = useRecoilState<boolean>(store.isTemporary);
-  const { data: startupConfig } = useGetStartupConfig();
-  const { user } = useAuthContext();
+  const { data: startupConfig, isFetched: startupConfigLoaded } = useGetStartupConfig();
+  const { user, token, isAuthenticated } = useAuthContext();
 
   const config = useMemo<ChatConfig>(() => {
     const ui = startupConfig?.interface;
@@ -31,9 +31,14 @@ export default function ChatSettingsProvider({ children }: { children: ReactNode
       queuedSendLockTimeoutMs: ui?.queuedSendLockTimeoutMs,
       queuedTurnReconciliationTimeoutMs: ui?.queuedTurnReconciliationTimeoutMs,
       steerArmConfirmationTimeoutMs: ui?.steerArmConfirmationTimeoutMs,
+      loaded: startupConfigLoaded,
+      balanceEnabled: startupConfig?.balance?.enabled ?? false,
     };
-  }, [startupConfig]);
-  const auth = useMemo<ChatAuth>(() => ({ user }), [user]);
+  }, [startupConfig, startupConfigLoaded]);
+  const auth = useMemo<ChatAuth>(
+    () => ({ user, token, isAuthenticated }),
+    [user, token, isAuthenticated],
+  );
 
   const settings = useMemo<ChatSettings>(
     () => ({

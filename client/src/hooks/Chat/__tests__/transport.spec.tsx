@@ -17,6 +17,7 @@ import type { StreamStatusResponse } from '~/data-provider';
 import type { ChatContract } from '~/hooks/Chat/contract';
 import type { Transport } from '~/hooks/Chat/contract';
 import type { PendingSteer } from '~/hooks/Chat/queue';
+import { ChatSettingsContext, defaultChatSettings } from '~/Providers/ChatSettingsContext';
 import { queuedMessagesByConvoId, resetQueueFamilies } from '~/hooks/Chat/queue';
 import { ChatTransportContext } from '~/Providers/ChatTransportContext';
 import { ChatContext, useChatContext } from '~/Providers/ChatContext';
@@ -79,6 +80,11 @@ function createFakeTransport(overrides: Partial<Transport> = {}) {
   return { transport, streams, sends };
 }
 
+const chatSettings = {
+  ...defaultChatSettings,
+  auth: { token: 'test-token', isAuthenticated: true },
+};
+
 function createWrapper(
   transport: Transport,
   seed?: (state: MutableSnapshot) => void,
@@ -100,9 +106,11 @@ function createWrapper(
               seed?.(state);
             }}
           >
-            <ChatTransportContext.Provider value={transport}>
-              {children}
-            </ChatTransportContext.Provider>
+            <ChatSettingsContext.Provider value={chatSettings}>
+              <ChatTransportContext.Provider value={transport}>
+                {children}
+              </ChatTransportContext.Provider>
+            </ChatSettingsContext.Provider>
           </RecoilRoot>
         </QueryClientProvider>
       </MemoryRouter>
