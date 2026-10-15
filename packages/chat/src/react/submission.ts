@@ -1,5 +1,5 @@
-import { atom } from 'jotai';
 import { atomFamily } from 'jotai/utils';
+import { atom, useAtomValue, useStore } from 'jotai';
 import type { Atom, WritableAtom, createStore } from 'jotai';
 import type { SetStateAction } from 'react';
 
@@ -43,4 +43,16 @@ export const anySubmittingAtom: Atom<boolean> = atom((get) => get(submittingInde
 /** Clears every pane's in-flight flag in the given store, for teardown between runs. */
 export function resetSubmitting(store: Pick<Store, 'get' | 'set'>): void {
   store.get(submittingIndexesAtom).forEach((index) => store.set(isSubmittingFamily(index), false));
+}
+
+/**
+ * Whether the pane at this index is generating, read from the store at render time.
+ * A render triggered by another state library (the app's Recoil atoms) can otherwise see this
+ * flag one commit old, so a decision that combines the two would act on a mismatched pair.
+ * The subscription still re-renders the caller when the flag changes.
+ */
+export function useIsSubmitting(index: PaneIndex): boolean {
+  const store = useStore();
+  useAtomValue(isSubmittingFamily(index));
+  return store.get(isSubmittingFamily(index));
 }

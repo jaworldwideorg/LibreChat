@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react';
+import { useSetAtom } from 'jotai';
 import copy from 'copy-to-clipboard';
-import { useSetAtom, useAtomValue } from 'jotai';
 import { useToastContext } from '@librechat/client';
+import { useIsSubmitting } from '@librechat/chat/react';
 import { useMatch, useNavigate } from 'react-router-dom';
-import { isSubmittingFamily } from '@librechat/chat/react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { PermissionTypes, Permissions, isForcedTemporaryRetention } from 'librechat-data-provider';
 import type { ShortcutBinding } from '~/utils/shortcuts';
@@ -546,7 +546,7 @@ export function useShortcutActions(): ShortcutAction[] {
   const routeMatch = useMatch('/c/:conversationId');
   const routeConvoId = routeMatch?.params.conversationId ?? null;
   const conversation = useRecoilValue(store.conversationByIndex(0));
-  const isSubmitting = useAtomValue(isSubmittingFamily(0));
+  const isSubmitting = useIsSubmitting(0);
   const sidebarExpanded = useRecoilValue(store.sidebarExpanded);
   const { setSidebarOpen, toggleSidebar } = useSidebarToggle();
   const setShowShortcutsDialog = useSetRecoilState(store.showShortcutsDialog);

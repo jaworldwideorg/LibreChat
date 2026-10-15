@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAtomValue } from 'jotai';
 import { Constants } from 'librechat-data-provider';
-import { isSubmittingFamily } from '@librechat/chat/react';
+import { useIsSubmitting } from '@librechat/chat/react';
 import type { TMessage } from 'librechat-data-provider';
 import {
   useLocalize,
@@ -53,7 +53,7 @@ function MessagesViewContent({
   const fileMap = useFileMapContext();
   const threadRows = useThreadRows(FLAT_THREAD ? messages : null, conversationId, fileMap);
   const { index, latestMessageId, latestMessageDepth, messagesKey } = useChatContext();
-  const isSubmitting = useAtomValue(isSubmittingFamily(index));
+  const isSubmitting = useIsSubmitting(index);
   const { showScrollButton, maximizeChatSpace } = useChatSurface();
   const autoScroll = useAtomValue(autoScrollAtom);
 

@@ -3,7 +3,7 @@ import { useRecoilValue } from 'recoil';
 import { useStore, useAtomValue } from 'jotai';
 import { QueryKeys } from 'librechat-data-provider';
 import { useQueryClient } from '@tanstack/react-query';
-import { isSubmittingFamily } from '@librechat/chat/react';
+import { isSubmittingFamily, useIsSubmitting } from '@librechat/chat/react';
 import type { TMessage, TAgentQueuedTurnReceipt } from 'librechat-data-provider';
 import type { StreamStatusResponse } from '~/data-provider/SSE/queries';
 import type { QueuedMessage, RunEnd } from '~/hooks/Chat/queue';
@@ -90,7 +90,7 @@ export default function useQueuedTurnReveal(
   const queryClient = useQueryClient();
   const revealKey = conversationId ?? '';
   const reveal = useAtomValue(revealedQueuedTurnFamily(revealKey));
-  const isSubmitting = useAtomValue(isSubmittingFamily(index));
+  const isSubmitting = useIsSubmitting(index);
   const activeEpoch = useRecoilValue(store.activeGenerationCreatedAtByConvoId(revealKey));
   const readHandoff = useCallback(
     (intent: RevealedQueuedTurn) => {
