@@ -8,8 +8,8 @@ import { ChatTransportContext, defaultChatTransport } from '~/Providers/ChatTran
 import { ChatSettingsContext } from '~/Providers/ChatSettingsContext';
 import { duringRunActionAtom } from '~/store/duringRun';
 import { useGetStartupConfig } from '~/data-provider';
+import store, { useGetEphemeralAgent } from '~/store';
 import { useAuthContext } from '~/hooks/AuthContext';
-import store from '~/store';
 
 /** Supplies the chat's app-global preferences from the app's own settings store, the deployment
  *  config and signed-in account from the app's queries, and the transport its turns run over. */
@@ -18,6 +18,8 @@ export default function ChatSettingsProvider({ children }: { children: ReactNode
   const resetVisibleArtifacts = useResetRecoilState(store.visibleArtifacts);
   const saveDrafts = useRecoilValue<boolean>(store.saveDrafts);
   const [isTemporary, setIsTemporary] = useRecoilState<boolean>(store.isTemporary);
+  const getEphemeralAgent = useGetEphemeralAgent();
+  const addedConversation = useRecoilValue(store.conversationByKeySelector(1));
   const { data: startupConfig } = useGetStartupConfig();
   const { user } = useAuthContext();
 
@@ -43,6 +45,8 @@ export default function ChatSettingsProvider({ children }: { children: ReactNode
       saveDrafts,
       isTemporary,
       setIsTemporary,
+      getEphemeralAgent,
+      addedConversation,
       config,
       auth,
     }),
@@ -53,6 +57,8 @@ export default function ChatSettingsProvider({ children }: { children: ReactNode
       saveDrafts,
       isTemporary,
       setIsTemporary,
+      getEphemeralAgent,
+      addedConversation,
       config,
       auth,
     ],
