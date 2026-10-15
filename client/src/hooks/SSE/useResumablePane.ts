@@ -23,6 +23,7 @@ import {
 import { pendingApprovalActionFamily } from '~/components/Chat/approval/state';
 import { abortScrollFamily, showStopButtonByIndex } from '~/store/generation';
 import { clearComposerDrafts, resolveRunEndTarget } from '~/utils';
+import { activeRunFamily } from './atoms';
 import store from '~/store';
 
 /**
@@ -75,7 +76,7 @@ export default function useResumablePane({
   refreshBalance: () => void;
 }): { pane: ResumablePane; queue: ResumableQueue } {
   const jotaiStore = useStore();
-  const setActiveRunId = useSetRecoilState(store.activeRunFamily(runIndex));
+  const setActiveRunId = useSetAtom(activeRunFamily(runIndex));
   const setAbortScroll = useSetAtom(abortScrollFamily(runIndex));
   const setSubmission = useSetRecoilState(store.submissionByIndex(runIndex));
   const setShowStopButton = useSetAtom(showStopButtonByIndex(runIndex));

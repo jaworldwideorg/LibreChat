@@ -103,7 +103,6 @@ const mockQueryClient = {
   }),
 };
 
-const mockActiveRunAtom = { key: 'activeRun' };
 const mockSubmissionAtom = { key: 'submission' };
 const mockPendingSteersAtom = { key: 'pendingSteers' };
 /** The follow-up queue a restored submission lands back in. */
@@ -135,9 +134,6 @@ function mockUseRecoilCallback() {
   return mockRecoilCallbacks[mockRecoilCallbackIndex++ % mockRecoilCallbacks.length];
 }
 const mockUseSetRecoilStateMock = jest.fn((atom: unknown) => {
-  if (atom === mockActiveRunAtom) {
-    return mockSetActiveRun;
-  }
   if (atom === mockSubmissionAtom) {
     return mockSetSubmission;
   }
@@ -200,6 +196,9 @@ jest.mock('jotai', () => {
       if (atom === generation.showStopButtonByIndex(0)) {
         return mockSetShowStopButton;
       }
+      if (atom === jest.requireActual('~/hooks/SSE/atoms').activeRunFamily(0)) {
+        return mockSetActiveRun;
+      }
       return actual.useSetAtom(atom);
     },
   };
@@ -208,7 +207,6 @@ jest.mock('jotai', () => {
 jest.mock('~/store', () => ({
   __esModule: true,
   default: {
-    activeRunFamily: jest.fn(() => mockActiveRunAtom),
     submissionByIndex: jest.fn(() => mockSubmissionAtom),
     pendingSteersByConvoId: jest.fn(() => mockPendingSteersAtom),
   },
