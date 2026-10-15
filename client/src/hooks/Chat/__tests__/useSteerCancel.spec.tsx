@@ -9,8 +9,9 @@ import {
   ComposerRestoreProvider,
   useComposerRestoreHost,
 } from '~/Providers/ComposerRestoreContext';
-import { queuedMessagesByConvoId, resetQueueFamilies } from '~/hooks/Chat/queue';
 import useSteerCancel, { useSteerMoveToQueue } from '../useSteerCancel';
+import { queuedMessagesByConvoId } from '~/hooks/Chat/queue';
+import { resetQueueFamilies } from 'test/queue';
 import store from '~/store';
 
 const mockCancelAsync = jest.fn();

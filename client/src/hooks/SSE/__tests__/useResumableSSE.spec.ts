@@ -329,8 +329,8 @@ import {
   queuedMessagesByConvoId,
   stopRequestedByConvoId,
   detachedRunByConvoId,
-  resetQueueFamilies,
 } from '~/hooks/Chat/queue';
+import { resetQueueFamilies } from 'test/queue';
 
 const CONV_ID = 'conv-abc-123';
 

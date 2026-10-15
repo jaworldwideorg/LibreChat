@@ -200,7 +200,7 @@ const runEndQueue = (signals: PrimitiveAtom<RunEnd[]>) =>
 /** A pane can receive A's terminal frame after the user has navigated to and
  * started B. Keep each terminal epoch until the queue drain has either parked
  * or consumed it; a single replaceable slot loses A when B finishes first. */
-const runEndsByIndex = atomFamily((_index: string | number) => atom<RunEnd[]>([]));
+export const runEndsByIndex = atomFamily((_index: string | number) => atom<RunEnd[]>([]));
 
 /** One-shot run-termination signal for a pane, written by the SSE final/error handlers and
  * consumed by `useQueueDrain`. */
@@ -211,7 +211,7 @@ export const runEndByIndex = atomFamily((index: string | number) =>
 /** Foreign terminal epochs are moved off the shared pane immediately. This
  * per-conversation carrier is queued for the same reason as the pane carrier:
  * successive epochs cannot overwrite one another while the chat is hidden. */
-const pendingRunEndsByConvoId = atomFamily((_conversationId: string) => atom<RunEnd[]>([]));
+export const pendingRunEndsByConvoId = atomFamily((_conversationId: string) => atom<RunEnd[]>([]));
 
 export const pendingRunEndByConvoId = atomFamily((conversationId: string) =>
   runEndQueue(pendingRunEndsByConvoId(conversationId)),
@@ -351,28 +351,4 @@ export function resolveDetachedRunEnd(
     generationCreatedAt: epoch,
     ...(outcome === 'completed' && { responseMessageId: response.messageId }),
   };
-}
-
-const clearFamily = <Param>(family: {
-  getParams(): Iterable<Param>;
-  remove(param: Param): void;
-}) => {
-  for (const param of [...family.getParams()]) {
-    family.remove(param);
-  }
-};
-
-/** Drops every per-key queue atom, so the next read of any key starts from its default. Isolates
- *  tests that share the default store. */
-export function resetQueueFamilies(): void {
-  clearFamily(queuedMessagesByConvoId);
-  clearFamily(settledQueuedTurnReceiptsByConvoId);
-  clearFamily(pendingQueuedTurnEnqueueIdsByConvoId);
-  clearFamily(pendingRunEndsByConvoId);
-  clearFamily(pendingRunEndByConvoId);
-  clearFamily(drainAfterAbortByIndex);
-  clearFamily(runEndsByIndex);
-  clearFamily(runEndByIndex);
-  clearFamily(detachedRunByConvoId);
-  clearFamily(stopRequestedByConvoId);
 }

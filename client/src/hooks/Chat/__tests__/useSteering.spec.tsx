@@ -25,7 +25,6 @@ import {
   pendingRunEndByConvoId,
   drainAfterAbortByIndex,
   runEndByIndex,
-  resetQueueFamilies,
 } from '~/hooks/Chat/queue';
 import {
   getReasoningStateKey,
@@ -41,6 +40,7 @@ import ChatSettingsProvider from '~/routes/ChatSettings';
 import { duringRunActionAtom } from '~/store/duringRun';
 import { applyPendingAction } from '~/utils/approval';
 import English from '~/locales/en/translation.json';
+import { resetQueueFamilies } from 'test/queue';
 import useQueueDrain from '../useQueueDrain';
 import store from '~/store';
 

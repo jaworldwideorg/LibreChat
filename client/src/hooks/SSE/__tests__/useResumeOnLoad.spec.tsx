@@ -13,7 +13,6 @@ import {
   stopRequestedByConvoId,
   pendingRunEndByConvoId,
   detachedRunByConvoId,
-  resetQueueFamilies,
 } from '~/hooks/Chat/queue';
 import { siblingIdxFamily, siblingKey } from '~/components/Chat/Messages/Thread/state';
 import { pendingApprovalActionFamily } from '~/components/Chat/approval/state';
@@ -21,6 +20,7 @@ import { agentQueuedTurnsQueryKey } from '~/data-provider/SSE/queuedTurns';
 import { submissionStartFamily } from '~/store/generation';
 import { revealedQueuedTurnFamily } from '~/store/steer';
 import useResumeOnLoad from '../useResumeOnLoad';
+import { resetQueueFamilies } from 'test/queue';
 import store from '~/store';
 
 const mockUseStreamStatus = jest.fn();

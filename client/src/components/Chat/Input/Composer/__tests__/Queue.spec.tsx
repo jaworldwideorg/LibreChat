@@ -11,9 +11,10 @@ import {
   QueuedTurnPortalProvider,
   useQueuedTurnPortal,
 } from '~/components/Chat/Steering/QueuedTurnPortal';
-import { queuedMessagesByConvoId, resetQueueFamilies } from '~/hooks/Chat/queue';
 import { hasQueuedIntent, releaseQueuedIntent } from '~/utils/queueIntent';
+import { queuedMessagesByConvoId } from '~/hooks/Chat/queue';
 import { revealedQueuedTurnFamily } from '~/store/steer';
+import { resetQueueFamilies } from 'test/queue';
 import Queue from '../Queue';
 jest.mock('~/hooks', () => ({
   useLocalize: () => (key: string, options?: Record<string, string | number>) => {

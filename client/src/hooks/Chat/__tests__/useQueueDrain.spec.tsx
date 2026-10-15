@@ -16,7 +16,6 @@ import {
   pendingRunEndByConvoId,
   drainAfterAbortByIndex,
   runEndByIndex,
-  resetQueueFamilies,
 } from '~/hooks/Chat/queue';
 import {
   claimQueuedIntent,
@@ -26,6 +25,7 @@ import {
 } from '~/utils/queueIntent';
 import { recoveryDispositionsFamily } from '~/components/Chat/Steering/recovery';
 import { revealedQueuedTurnFamily } from '~/store/steer';
+import { resetQueueFamilies } from 'test/queue';
 import useQueueDrain from '../useQueueDrain';
 import store from '~/store';
 
