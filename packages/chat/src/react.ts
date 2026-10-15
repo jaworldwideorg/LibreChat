@@ -13,3 +13,8 @@ export type {
   MessagePartsMarkdownProps,
   MessagePartsUserTextPreferences,
 } from './react/host';
+export {
+  submissionStartFamily,
+  showStopButtonByIndex,
+  abortScrollFamily,
+} from './react/generation';

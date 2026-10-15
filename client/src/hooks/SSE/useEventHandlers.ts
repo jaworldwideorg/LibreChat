@@ -3,6 +3,7 @@ import { v4 } from 'uuid';
 import { useStore, useSetAtom } from 'jotai';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSetRecoilState, useRecoilCallback } from 'recoil';
+import { submissionStartFamily } from '@librechat/chat/react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   QueryKeys,
@@ -65,7 +66,6 @@ import { shouldResetSubagentAtomsOnConversationChange } from './cleanup';
 import useAttachmentHandler from '~/hooks/SSE/useAttachmentHandler';
 import { useChatTransport } from '~/Providers/ChatTransportContext';
 import useContentHandler from '~/hooks/SSE/useContentHandler';
-import { submissionStartFamily } from '~/store/generation';
 import useStepHandler from '~/hooks/SSE/useStepHandler';
 import { useApplyAgentTemplate } from '~/hooks/Agents';
 import { useAuthContext } from '~/hooks/AuthContext';

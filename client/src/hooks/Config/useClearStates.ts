@@ -1,14 +1,14 @@
 import { useStore } from 'jotai';
 import { useRecoilCallback } from 'recoil';
 import {
-  getReasoningStateKey,
-  clearPendingReasoningOverrides,
-} from '~/components/Chat/Input/Composer/state';
-import {
   abortScrollFamily,
   showStopButtonByIndex,
   submissionStartFamily,
-} from '~/store/generation';
+} from '@librechat/chat/react';
+import {
+  getReasoningStateKey,
+  clearPendingReasoningOverrides,
+} from '~/components/Chat/Input/Composer/state';
 import { siblingIdxFamily, siblingKey } from '~/components/Chat/Messages/Thread/state';
 import { showFilesDialogAtom, filesDialogTriggerAtom } from '~/store/filesDialog';
 import { showSkillsPopoverFamily } from '~/components/Chat/Input/skillsState';

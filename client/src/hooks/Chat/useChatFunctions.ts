@@ -5,6 +5,7 @@ import { useStore, useSetAtom } from 'jotai';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSetRecoilState, useRecoilValue, useRecoilCallback } from 'recoil';
+import { submissionStartFamily, showStopButtonByIndex } from '@librechat/chat/react';
 import {
   Constants,
   QueryKeys,
@@ -54,7 +55,6 @@ import {
 } from '~/hooks/Agents/codeDecision';
 import { activeUsageResponseIdFamily } from '~/components/Chat/Input/TokenUsage/store';
 import useFocusRegeneratedResponse from '~/hooks/Chat/useFocusRegeneratedResponse';
-import { submissionStartFamily, showStopButtonByIndex } from '~/store/generation';
 import { usesReasoningCapabilities } from '~/hooks/Endpoint/useModelReasoning';
 import useGetConversation from '~/hooks/Conversations/useGetConversation';
 import useCodeApprovalMode from '~/hooks/Agents/useCodeApprovalMode';

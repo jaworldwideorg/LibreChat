@@ -3,6 +3,7 @@ import { v4 } from 'uuid';
 import { useStore, useSetAtom } from 'jotai';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSetRecoilState, useRecoilCallback } from 'recoil';
+import { abortScrollFamily, showStopButtonByIndex } from '@librechat/chat/react';
 import {
   Constants,
   QueryKeys,
@@ -107,7 +108,6 @@ import useEventHandlers, {
   keepLocalCodeApprovalMode,
 } from './useEventHandlers';
 import { pendingApprovalActionFamily } from '~/components/Chat/approval/state';
-import { abortScrollFamily, showStopButtonByIndex } from '~/store/generation';
 import { withSubmittedCodeDecision } from '~/hooks/Agents/codeDecision';
 import { useChatTransport } from '~/Providers/ChatTransportContext';
 import useSteerConvert from '~/hooks/Chat/useSteerConvert';

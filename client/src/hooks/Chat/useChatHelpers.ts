@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useAtom, useSetAtom, useStore } from 'jotai';
 import { useQueryClient } from '@tanstack/react-query';
+import { abortScrollFamily } from '@librechat/chat/react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { Constants, QueryKeys, isAssistantsEndpoint } from 'librechat-data-provider';
 import type { TMessage } from 'librechat-data-provider';
@@ -12,7 +13,6 @@ import { siblingIdxFamily, siblingKey } from '~/components/Chat/Messages/Thread/
 import { useChatSettings } from '~/Providers/ChatSettingsContext';
 import useChatFunctions from '~/hooks/Chat/useChatFunctions';
 import useSteerConvert from '~/hooks/Chat/useSteerConvert';
-import { abortScrollFamily } from '~/store/generation';
 import { resolveAbortSteerTarget } from '~/utils';
 import useNewConvo from '~/hooks/useNewConvo';
 import { getMessageCacheIds } from './cache';

@@ -7,7 +7,7 @@ import {
   abortScrollFamily,
   showStopButtonByIndex,
   submissionStartFamily,
-} from '~/store/generation';
+} from '@librechat/chat/react';
 import { pendingReasoningOverrideFamily } from '~/components/Chat/Input/Composer/state';
 import { filesDialogTriggerAtom, showFilesDialogAtom } from '~/store/filesDialog';
 import useClearStates from '../useClearStates';
