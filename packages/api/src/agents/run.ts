@@ -128,6 +128,7 @@ import { buildEffectiveToolApprovalPolicy } from '~/agents/hitl/allow';
 import { prepareQueuedCodeFileContext } from '~/files/code/queued';
 import { getBuiltInBaseURL } from '~/endpoints/openai/initialize';
 import { getProviderConfig } from '~/endpoints/config/providers';
+import { collectMCPCodeSessionToolNames } from '~/mcp/files';
 import { buildToolApprovalHooks } from '~/agents/hitl/hooks';
 import { getAgentCheckpointer } from '~/agents/checkpointer';
 import { getPluginHookSource } from '~/agents/hooks/source';
@@ -3111,6 +3112,9 @@ export async function createRun({
       EDIT_FILE_TOOL_NAME,
       Constants.READ_FILE,
       CHECK_BACKGROUND_TASK_NAME,
+      ...(appConfig?.mcpSettings?.fileTransfer?.enabled
+        ? collectMCPCodeSessionToolNames(codeFileAgents.values())
+        : []),
     ],
     // Derive the Langfuse trace id deterministically from runId so message
     // feedback can be scored against the trace without a lookup (see the

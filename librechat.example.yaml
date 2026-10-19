@@ -628,6 +628,14 @@ actions:
 # Supports wildcards: '*.example.com' matches 'api.example.com', 'staging.example.com', etc.
 # Supports protocol/port restrictions: 'https://api.example.com:8443' restricts to specific protocol/port.
 # mcpSettings:
+#   # Transfer embedded binary MCP resources into host storage and the selected Code API.
+#   # Requires execute_code permission and a resolved upload-capable environment.
+#   # No resource URI is fetched. Images and MCP Apps retain their existing display behavior.
+#   fileTransfer:
+#     enabled: false
+#     maxFiles: 10
+#     maxFileBytes: 20971520
+#     maxTotalBytes: 52428800
 #   # New MCP Apps require explicit opt-in. If omitted, legacy inline HTML remains enabled;
 #   # false disables both MCP Apps and legacy inline HTML.
 #   apps: true

@@ -36,6 +36,7 @@ jest.mock('@librechat/api', () => ({
   captureSubagentIdentity: jest.requireActual('@librechat/api').captureSubagentIdentity,
   createToolTimingAdapter: jest.requireActual('@librechat/api').createToolTimingAdapter,
   stampCommandExecutor: jest.requireActual('@librechat/api').stampCommandExecutor,
+  enqueueMCPFileAttachments: jest.requireActual('@librechat/api').enqueueMCPFileAttachments,
 }));
 
 jest.mock('@librechat/data-schemas', () => ({
@@ -626,6 +627,63 @@ describe('createToolEndCallback', () => {
     };
     artifactPromises = [];
   });
+
+  it.each(['createToolEndCallback', 'createResponsesToolEndCallback'])(
+    '%s persists transferred MCP inputs with the response message and tool ownership',
+    async (factoryName) => {
+      const file = {
+        file_id: 'synthetic-file',
+        user: req.user.id,
+        filename: 'synthetic.pdf',
+        filepath: '/uploads/synthetic.bin',
+        source: 'local',
+        type: 'application/pdf',
+        bytes: 333,
+      };
+      res.headersSent = true;
+      const callback = require('../callbacks')[factoryName]({
+        req,
+        res,
+        artifactPromises,
+        tracker: { nextSequence: jest.fn(() => 1) },
+      });
+      await callback(
+        {
+          output: {
+            name: 'download_attachment_mcp_fixture',
+            tool_call_id: 'download-call',
+            artifact: { mcp_files: [file] },
+          },
+        },
+        {
+          run_id: 'response-message',
+          thread_id: 'synthetic-conversation',
+          executingAgentId: 'executing-agent',
+          stepId: 'download-step',
+        },
+      );
+      expect(await Promise.all(artifactPromises)).toEqual([
+        {
+          ...file,
+          messageId: 'response-message',
+          conversationId: 'synthetic-conversation',
+          toolCallId: 'download-call',
+          agentId: 'executing-agent',
+          stepId: 'download-step',
+        },
+      ]);
+      if (factoryName === 'createResponsesToolEndCallback') {
+        expect(require('@librechat/api').writeAttachmentEvent).toHaveBeenCalledWith(
+          res,
+          1,
+          await artifactPromises[0],
+          { messageId: 'response-message', conversationId: 'synthetic-conversation' },
+        );
+      } else {
+        expect(res.write).toHaveBeenCalledWith(expect.stringContaining('synthetic-file'));
+      }
+    },
+  );
 
   it('preserves separate owners for final search artifacts with repeated tool-call IDs', async () => {
     const toolEndCallback = createToolEndCallback({ req, res, artifactPromises });

@@ -4064,6 +4064,27 @@ export const toolCallPreviewsConfigSchema = z.object({
 
 export type TToolCallPreviewsConfig = z.infer<typeof toolCallPreviewsConfigSchema>;
 
+export const mcpFileTransferSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    maxFiles: z.number().int().positive().max(100).default(10),
+    maxFileBytes: z
+      .number()
+      .int()
+      .positive()
+      .max(100 * 1024 * 1024)
+      .default(20 * 1024 * 1024),
+    maxTotalBytes: z
+      .number()
+      .int()
+      .positive()
+      .max(100 * 1024 * 1024)
+      .default(50 * 1024 * 1024),
+  })
+  .default({});
+
+export type TMCPFileTransferPolicy = z.infer<typeof mcpFileTransferSchema>;
+
 export const configSchema = z.object({
   version: z.string(),
   permissions: z
@@ -4203,6 +4224,7 @@ export const configSchema = z.object({
     .default({}),
   mcpSettings: z
     .object({
+      fileTransfer: mcpFileTransferSchema,
       allowedDomains: z.array(z.string()).optional(),
       allowedAddresses: allowedAddressesSchema,
       catalogRecovery: z

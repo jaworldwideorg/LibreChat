@@ -16,7 +16,12 @@ import type {
   TextContent,
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
-import type { SearchResultData, UIResource, TMCPAppOperationLimits } from 'librechat-data-provider';
+import type {
+  SearchResultData,
+  UIResource,
+  TFile,
+  TMCPAppOperationLimits,
+} from 'librechat-data-provider';
 import type { TokenMethods, IUser } from '@librechat/data-schemas';
 import type { LCTool } from '@librechat/agents';
 import type {
@@ -160,6 +165,7 @@ export type Artifacts =
       files?: Array<{ id: string; name: string }>;
       session_id?: string;
       file_ids?: string[];
+      mcp_files?: TFile[];
     }
   | undefined;
 
