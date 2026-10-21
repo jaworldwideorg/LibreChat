@@ -78,6 +78,7 @@ export interface RunFileSessionDeps {
 }
 
 export interface CapturedRunArtifact {
+  mcp_files?: TFile[];
   session_id?: string;
   files?: Array<{
     id: string;
@@ -365,7 +366,15 @@ export function createRunFileSession(deps: RunFileSessionDeps): RunFileSession {
     if (!manifest || !context) return false;
     const actor = actorFor(agentId, context);
     const key = JSON.stringify(actor);
-    const incomingFiles = (artifact.files ?? []).filter((file) => file.inherited !== true);
+    if (artifact.mcp_files?.length) {
+      for (const file of artifact.mcp_files) manifest.admitInput(actor, file);
+    }
+    const inputIds = new Set(
+      (artifact.mcp_files ?? []).map((file) => file.metadata?.codeEnvRef?.file_id).filter(Boolean),
+    );
+    const incomingFiles = (artifact.files ?? []).filter(
+      (file) => file.inherited !== true && !inputIds.has(file.id),
+    );
     const operationSignal = codeSignals.get(key);
     const captureSignal = operationSignal
       ? AbortSignal.any([lifetime.signal, operationSignal])

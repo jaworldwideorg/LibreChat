@@ -378,3 +378,24 @@ describe('run file manifest', () => {
     await expect(manifest.publish(child, 'csv')).rejects.toThrow('Only artifacts');
   });
 });
+
+describe('downloaded MCP run inputs', () => {
+  it('grants the producer and parent access without exposing inputs to siblings', async () => {
+    const { manifest } = setup();
+    const downloaded = { ...input, file_id: 'downloaded', conversationId: scope.conversationId };
+    manifest.admitInput(child, downloaded);
+    expect((await manifest.getFiles(child)).map((f) => f.file_id)).toContain('downloaded');
+    expect((await manifest.getFiles(parent)).map((f) => f.file_id)).toContain('downloaded');
+    expect((await manifest.getFiles(sibling)).map((f) => f.file_id)).not.toContain('downloaded');
+  });
+  it('rejects foreign ownership, unregistered executions and identity reassignment', () => {
+    const { manifest } = setup();
+    const downloaded = { ...input, file_id: 'downloaded', conversationId: scope.conversationId };
+    expect(() => manifest.admitInput(child, { ...downloaded, user: 'other-user' })).toThrow();
+    expect(() =>
+      manifest.admitInput({ executionId: 'unknown', agentId: 'worker' }, downloaded),
+    ).toThrow();
+    manifest.admitInput(child, downloaded);
+    expect(() => manifest.admitInput(sibling, downloaded)).toThrow();
+  });
+});

@@ -98,6 +98,7 @@ export interface RunFileManifest<TArtifact extends RunArtifact = RunArtifact> {
   register: (execution: RunFileExecution) => void;
   getFiles: (actor: RunFileActor, signal?: AbortSignal, mode?: RunFileReadMode) => Promise<TFile[]>;
   list: (actor: RunFileActor, signal?: AbortSignal) => Promise<RunFileEntry[]>;
+  admitInput: (actor: RunFileActor, file: TFile) => void;
   stage: (actor: RunFileActor, artifact: TArtifact) => void;
   discardArtifacts: (actor: RunFileActor) => void;
   publish: (
@@ -141,6 +142,7 @@ export function createRunFileManifest<TArtifact extends RunArtifact>({
   const executions = new Map<string, RunFileExecution>();
   const files = new Map<string, TFile>();
   const inputs = new Set<string>();
+  const downloadedInputs = new Set<string>();
   const artifacts = new Map<string, { actor: RunFileActor; artifact: TArtifact }>();
   const publications = new Map<string, Promise<TFile>>();
   let closed = false;
@@ -250,7 +252,8 @@ export function createRunFileManifest<TArtifact extends RunArtifact>({
     assertActive();
     const retainedIds = new Set(published.map((file) => file.file_id));
     for (const fileId of files.keys()) {
-      if (!inputs.has(fileId) && !retainedIds.has(fileId)) files.delete(fileId);
+      if (!inputs.has(fileId) && !downloadedInputs.has(fileId) && !retainedIds.has(fileId))
+        files.delete(fileId);
     }
     for (const file of published) {
       if (
@@ -295,6 +298,35 @@ export function createRunFileManifest<TArtifact extends RunArtifact>({
 
   async function list(actor: RunFileActor, signal?: AbortSignal): Promise<RunFileEntry[]> {
     return describeRunFiles(await getFiles(actor, signal), scope.runId);
+  }
+
+  function admitInput(actor: RunFileActor, file: TFile): void {
+    const execution = executionFor(actor);
+    if (!owns(file) || file.conversationId !== scope.conversationId)
+      throw new Error('MCP input is outside this shared-file run');
+    if (!files.has(file.file_id) && files.size + pendingPublications >= policy.maxFiles)
+      throw new Error('The shared-file manifest exceeds the configured file limit.');
+    const prior = files.get(file.file_id);
+    if (prior && prior.metadata?.runFile?.executionId !== actor.executionId)
+      throw new Error('MCP input identity cannot be reassigned');
+    const admitted = structuredClone(file);
+    admitted.metadata = {
+      ...admitted.metadata,
+      runFile: {
+        runId: scope.runId,
+        executionId: actor.executionId,
+        agentId: actor.agentId,
+        parentExecutionId: execution.parentId,
+        parentAgentId: execution.parentAgentId,
+        sourceFileId: file.file_id,
+        publishedAt: new Date(now()).toISOString(),
+        inputFileIds: [...inputs],
+        recipientAgentIds: [],
+      },
+    };
+    files.set(file.file_id, admitted);
+    downloadedInputs.add(file.file_id);
+    publicationRevision++;
   }
 
   function stage(actor: RunFileActor, artifact: TArtifact): void {
@@ -426,5 +458,5 @@ export function createRunFileManifest<TArtifact extends RunArtifact>({
     }
   }
 
-  return { register, getFiles, list, stage, discardArtifacts, publish, close };
+  return { register, getFiles, list, admitInput, stage, discardArtifacts, publish, close };
 }

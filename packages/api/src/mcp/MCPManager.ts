@@ -1657,7 +1657,9 @@ Please follow these instructions when using tools from the respective MCP server
         }
         this.checkIdleConnections();
         const rawToolResult = result as t.MCPToolCallResponse;
-        const transferred = transferFiles ? await transferFiles(rawToolResult) : undefined;
+        const transferred = transferFiles
+          ? await transferFiles(rawToolResult, rawConfig?.fileTransfer)
+          : undefined;
         const toolResult = transferred
           ? { ...rawToolResult, content: transferred.content }
           : rawToolResult;

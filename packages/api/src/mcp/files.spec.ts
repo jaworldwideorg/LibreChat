@@ -177,6 +177,37 @@ describe('MCP file transfer', () => {
     return { transfer, deps, req, upload, saveBuffer, uploaded, deleteStorage, diskPath };
   }
 
+  it('honors server opt-out and MIME restrictions before any upload', async () => {
+    const f = fixture();
+    const result = { content: [resource()] };
+    expect(
+      (await f.transfer(result, { userId, serverPolicy: { enabled: false } })).outcomes,
+    ).toEqual([]);
+    expect(
+      (await f.transfer(result, { userId, serverPolicy: { allowedMimeTypes: ['text/plain'] } }))
+        .outcomes[0],
+    ).toEqual({ status: 'unavailable', code: 'mime_not_allowed' });
+    expect(f.upload).not.toHaveBeenCalled();
+    const missing = resource();
+    delete missing.resource.mimeType;
+    expect(
+      (
+        await f.transfer(
+          { content: [missing] },
+          { userId, serverPolicy: { allowedMimeTypes: ['application/pdf'] } },
+        )
+      ).files,
+    ).toEqual([]);
+    expect(
+      (
+        await f.transfer(result, {
+          userId,
+          serverPolicy: { allowedMimeTypes: ['application/pdf'] },
+        })
+      ).files,
+    ).toHaveLength(1);
+  });
+
   it('preserves original PDF bytes, stores metadata and registers usable interpreter references', async () => {
     const f = fixture();
     const result = await f.transfer({ content: [resource()] }, { userId });
@@ -670,5 +701,33 @@ describe('MCP file transfer', () => {
         }
       },
     );
+  });
+});
+
+describe('per-server transfer policy schema', () => {
+  it('accepts normalized exact media types and rejects wildcard patterns', () => {
+    const valid = configSchema.parse({
+      version: '1.3.2',
+      mcpServers: {
+        fixture: {
+          type: 'streamable-http',
+          url: 'http://127.0.0.1:3015/mcp',
+          fileTransfer: { enabled: true, allowedMimeTypes: [' Application/PDF '] },
+        },
+      },
+    });
+    expect(valid.mcpServers?.fixture.fileTransfer?.allowedMimeTypes).toEqual(['application/pdf']);
+    expect(() =>
+      configSchema.parse({
+        version: '1.3.2',
+        mcpServers: {
+          fixture: {
+            type: 'streamable-http',
+            url: 'http://127.0.0.1:3015/mcp',
+            fileTransfer: { allowedMimeTypes: ['application/*'] },
+          },
+        },
+      }),
+    ).toThrow();
   });
 });

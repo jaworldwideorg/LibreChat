@@ -506,6 +506,8 @@ actions:
 #   # Transfer embedded binary MCP resources into host storage and the selected Code API.
 #   # Requires execute_code permission and a resolved upload-capable environment.
 #   # No resource URI is fetched. Images and MCP Apps retain their existing display behavior.
+#   # Optional override: mcpServers.<server>.fileTransfer.enabled
+#   # Optional exact MIME allowlist: mcpServers.<server>.fileTransfer.allowedMimeTypes
 #   fileTransfer:
 #     enabled: false
 #     maxFiles: 10
