@@ -194,7 +194,24 @@ export const MCP_SERVER_TITLE_PATTERN = new RegExp(
 export const MCP_SERVER_TITLE_ERROR =
   'Title must start with a letter or number and can include spaces, hyphens, and apostrophes';
 
+export const mcpServerFileTransferSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    allowedMimeTypes: z
+      .array(
+        z
+          .string()
+          .trim()
+          .toLowerCase()
+          .regex(/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/),
+      )
+      .max(100)
+      .optional(),
+  })
+  .strict();
+
 const BaseOptionsSchema = z.object({
+  fileTransfer: mcpServerFileTransferSchema.optional(),
   /** Display name for the MCP server */
   title: z.string().regex(MCP_SERVER_TITLE_PATTERN, MCP_SERVER_TITLE_ERROR).optional(),
   /** Description of the MCP server */

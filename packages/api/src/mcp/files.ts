@@ -26,6 +26,7 @@ interface MCPFileInvocation {
   userId?: string;
   signal?: AbortSignal;
   files?: CodeEnvFile[];
+  serverPolicy?: { enabled?: boolean; allowedMimeTypes?: string[] };
   /** Trusted route resolved by the host for this execution, including deferred tools. */
   route?: CodeExecutionContext;
 }
@@ -53,7 +54,12 @@ export function collectMCPCodeSessionToolNames(
 
 interface MCPFileTransferOutcome {
   status: 'ready' | 'failed' | 'unavailable';
-  code?: 'invalid_payload' | 'limit_exceeded' | 'unavailable' | 'transfer_failed';
+  code?:
+    | 'invalid_payload'
+    | 'limit_exceeded'
+    | 'unavailable'
+    | 'transfer_failed'
+    | 'mime_not_allowed';
   file_id?: string;
   filename?: string;
   size_bytes?: number;
@@ -74,6 +80,7 @@ export type MCPFileTransfer = (
 
 export type MCPBoundFileTransfer = (
   result: t.MCPToolCallResponse,
+  serverPolicy?: MCPFileInvocation['serverPolicy'],
 ) => Promise<MCPFileTransferResult>;
 
 interface BufferStorage {
@@ -142,7 +149,9 @@ export function bindMCPFileTransfer(
   transfer: MCPFileTransfer | undefined,
   invocation: MCPFileInvocation,
 ): MCPBoundFileTransfer | undefined {
-  return transfer ? (result) => transfer(result, invocation) : undefined;
+  return transfer
+    ? (result, serverPolicy) => transfer(result, { ...invocation, serverPolicy })
+    : undefined;
 }
 
 /** Reuses host storage and provisioning; remote resource URIs are never opened or fetched. */
@@ -154,6 +163,8 @@ export function createMCPFileTransfer(deps: MCPFileDependencies): MCPFileTransfe
 
   return async (result, invocation) => {
     const route = invocation.route ?? deps.route;
+    if (invocation.serverPolicy?.enabled === false)
+      return { content: result?.content ?? [], files: [], outcomes: [] };
     const content: t.ToolContentPart[] = [];
     const files: CodeEnvFile[] = [];
     const outcomes: MCPFileTransferOutcome[] = [];
@@ -179,6 +190,12 @@ export function createMCPFileTransfer(deps: MCPFileDependencies): MCPFileTransfe
         continue;
       }
       invocation.signal?.throwIfAborted();
+      const allowlist = invocation.serverPolicy?.allowedMimeTypes;
+      const mime = item.resource.mimeType?.split(';', 1)[0].trim().toLowerCase();
+      if (allowlist && (!mime || !allowlist.includes(mime))) {
+        outcomes.push({ status: 'unavailable', code: 'mime_not_allowed' });
+        continue;
+      }
       count += 1;
       if (count > policy.maxFiles) {
         if (count === policy.maxFiles + 1)

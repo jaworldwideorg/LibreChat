@@ -287,6 +287,63 @@ describe('run file execution host', () => {
     expect((await h.host.session.list('worker', identity())).artifacts).toEqual([]);
   });
 
+  it('admits an MCP download to the producer and parent and delivers attachment metadata', async () => {
+    const h = harness();
+    await h.prepare();
+    const downloaded = file('downloaded', { conversationId: 'conversation' });
+    const callback = jest.fn(async () => undefined);
+    const data = {
+      output: {
+        name: 'download_mcp_fixture',
+        tool_call_id: 'download',
+        content: 'ready',
+        artifact: { mcp_files: [downloaded] },
+      },
+    };
+    await h.host.deliverToolEnd(callback, data, {
+      executingAgentId: 'worker',
+      executionContext: identity(),
+    });
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect((await h.host.session.list('worker', identity())).files.map((f) => f.file_id)).toContain(
+      'downloaded',
+    );
+    expect((await h.host.session.list('parent')).files.map((f) => f.file_id)).toContain(
+      'downloaded',
+    );
+    expect(h.deps.snapshots.capture).not.toHaveBeenCalled();
+    const context = h.host.getContext('worker', identity())!;
+    context.tool_resources = {
+      execute_code: {
+        files: [
+          {
+            ...downloaded,
+            metadata: {
+              codeEnvRefs: {
+                'managed-worker': {
+                  id: 'user',
+                  kind: 'user',
+                  file_id: 'stored-download',
+                  storage_session_id: 'stored-session',
+                  sandboxFilename: 'downloaded.csv',
+                },
+              },
+            },
+          },
+        ],
+      },
+    };
+    expect(
+      await h.host.provisionPrepared(['execute_code'], 'worker', h.signal, identity()),
+    ).toContainEqual({
+      id: 'stored-download',
+      storage_session_id: 'stored-session',
+      name: 'downloaded.csv',
+      resource_id: 'user',
+      kind: 'user',
+    });
+  });
+
   it.each(['execute_code', 'bash_tool', 'create_file'])(
     'keeps %s outputs private until publication',
     async (name) => {

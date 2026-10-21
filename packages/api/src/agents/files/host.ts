@@ -499,9 +499,34 @@ export function createRunFileHost<TContext extends RunFileToolContext>({
     if (!session.isActive()) return undefined;
     const key = JSON.stringify(session.actorFor(agentId, executionContext));
     if (!prepared.has(key)) throw new Error('The shared-file execution has not been prepared.');
-    return serialize(key, signal, async () =>
-      provisioningCallbacks.get(key)?.(toolNames, agentId, signal),
-    );
+    return serialize(key, signal, async () => {
+      const context = getContext(agentId, executionContext);
+      const existingFiles = [...(context?.tool_resources?.execute_code?.files ?? [])];
+      const provisioned = await provisioningCallbacks.get(key)?.(toolNames, agentId, signal);
+      if (!toolNames.some(isCodeFileToolName)) return provisioned;
+      const routeKey =
+        context?.codeExecutionContext?.executionRouteKey ??
+        context?.codeExecutionContext?.executionProfile ??
+        'default';
+      const retained: CodeEnvFile[] = [];
+      for (const file of [
+        ...existingFiles,
+        ...(context?.tool_resources?.execute_code?.files ?? []),
+      ]) {
+        const ref = getCodeEnvRefs(file.metadata).find(([route]) => route === routeKey)?.[1];
+        if (ref?.kind === 'user' && ref.id === user?.id && ref.file_id && ref.storage_session_id)
+          retained.push({
+            id: ref.file_id,
+            name: ref.sandboxFilename ?? file.filename,
+            storage_session_id: ref.storage_session_id,
+            resource_id: ref.id,
+            kind: 'user',
+          });
+      }
+      return [
+        ...new Map([...(provisioned ?? []), ...retained].map((file) => [file.id, file])).values(),
+      ];
+    });
   }
 
   const deliverToolEnd = async (
@@ -511,7 +536,12 @@ export function createRunFileHost<TContext extends RunFileToolContext>({
   ): Promise<void> => {
     const executionContext = metadata.executionContext as SubagentExecutionContext | undefined;
     if (!session.isActive() || executionContext == null) return callback(data, metadata);
-    if (!isCodeArtifactToolOutput(data.output) && !isCodeFileToolName(data.output.name)) {
+    const mcpInputs = (data.output.artifact as { mcp_files?: TFile[] } | undefined)?.mcp_files;
+    if (
+      !mcpInputs?.length &&
+      !isCodeArtifactToolOutput(data.output) &&
+      !isCodeFileToolName(data.output.name)
+    ) {
       return callback(data, metadata);
     }
     const agentId = metadata.executingAgentId ?? metadata.agentId ?? metadata.agent_id;
@@ -527,6 +557,7 @@ export function createRunFileHost<TContext extends RunFileToolContext>({
       data.output.artifact as Parameters<typeof session.capture>[3],
       context.codeExecutionContext,
     );
+    if (mcpInputs?.length) await callback(data, metadata);
   };
 
   return { session, getContext, provision, provisionPrepared, deliverToolEnd };
