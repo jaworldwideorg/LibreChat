@@ -329,7 +329,7 @@ export function mergeMCPFileTransfer(
     inspection: 'not_attempted',
     limitation: transferred.outcomes.some((outcome) => outcome.status !== 'ready')
       ? 'Some attachments could not be transferred. No usable file reference is available for failed transfers.'
-      : 'Registered files are included in the next code execution input. Open their returned filenames with the code tool.',
+      : 'Registered files are included in the next code execution input. Open their returned filenames with the code tool. These are downloaded inputs, not generated outputs: do not copy them merely to publish_artifact. When run file sharing is enabled, the authorized parent discovers them through list_run_files.',
   });
   return [
     `${text}\n\n${summary}`,
