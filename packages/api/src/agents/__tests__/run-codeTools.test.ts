@@ -101,6 +101,7 @@ async function captureRunConfig(
 async function captureAgentsRunConfig(
   agents: Array<ReturnType<typeof makeAgent>>,
   subagentTasks?: SubagentTaskConfig,
+  appConfig?: Parameters<typeof createRun>[0]['appConfig'],
 ): Promise<Record<string, unknown>> {
   await createRun({
     agents: agents as never,
@@ -108,6 +109,7 @@ async function captureAgentsRunConfig(
     streaming: true,
     streamUsage: true,
     subagentTasks,
+    appConfig,
   });
   const createMock = Run.create as jest.Mock;
   expect(createMock).toHaveBeenCalledTimes(1);
@@ -529,6 +531,35 @@ describe('createRun code-tool eager/session wiring', () => {
     );
   });
 
+  it.each([false, true])(
+    'enrolls eager, deferred and child MCP tools only when transfer is enabled=%s',
+    async (enabled) => {
+      const child = makeAgent({
+        id: 'child',
+        toolDefinitions: [{ name: 'download_mcp_child', description: 'Synthetic', parameters: {} }],
+      });
+      const agent = makeAgent({
+        toolRegistry: new Map([
+          [
+            'download_mcp_deferred',
+            { name: 'download_mcp_deferred', description: 'Synthetic', parameters: {} },
+          ],
+        ]),
+        toolDefinitions: [
+          { name: 'download_mcp_primary', description: 'Synthetic', parameters: {} },
+        ],
+        subagentAgentConfigs: [child],
+      });
+      const appConfig = { mcpSettings: { fileTransfer: { enabled } } } as Parameters<
+        typeof createRun
+      >[0]['appConfig'];
+      const runConfig = await captureAgentsRunConfig([agent], undefined, appConfig);
+      for (const name of ['download_mcp_primary', 'download_mcp_deferred', 'download_mcp_child']) {
+        if (enabled) expect(runConfig.codeSessionToolNames).toContain(name);
+        else expect(runConfig.codeSessionToolNames).not.toContain(name);
+      }
+    },
+  );
   it('reports why a subagent could not start instead of leaving the SDK to guess', async () => {
     const runConfig = await captureRunConfig();
     expect(runConfig.onSubagentResolutionFailure).toBe(reportSubagentResolutionFailure);

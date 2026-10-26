@@ -48,6 +48,7 @@ export * from './mcp/authorization';
 export * from './mcp/authorizationRetry';
 export * from './mcp/assistants';
 export * from './mcp/request';
+export * from './mcp/files';
 export * from './mcp/reinitialize';
 export * from './mcp/icons';
 /* Utilities */

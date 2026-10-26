@@ -18,6 +18,7 @@ import type { MCPClientCapabilityProfile } from './capabilities';
 import type { AuthIdentityContext } from '~/utils/identity';
 import type { GraphTokenResolver } from '~/utils/graph';
 import type { FlowStateManager } from '~/flow/manager';
+import type { MCPBoundFileTransfer } from './files';
 import type { MCPOAuthTokens } from './oauth';
 import type { RequestBody } from '~/types';
 import type * as t from './types';
@@ -82,6 +83,7 @@ import { OAuthLifecycleRelay } from './oauth/pending';
 import { isOwnedAbortError } from '~/utils/errors';
 import { markMCPToolResultError } from './status';
 import { withMCPRequestSignal } from './signal';
+import { mergeMCPFileTransfer } from './files';
 import { MCPConnection } from './connection';
 import { mcpConfig } from './mcpConfig';
 
@@ -1509,6 +1511,7 @@ Please follow these instructions when using tools from the respective MCP server
     onOAuthCredentialsChanging,
     mcpApps,
     scheduledMCPInvocation,
+    transferFiles,
   }: {
     scheduledBearerInvocation?: ScheduledMCPBearerInvocation;
     scheduledMCPInvocation?: ScheduledMCPInvocation;
@@ -1536,6 +1539,7 @@ Please follow these instructions when using tools from the respective MCP server
     onOAuthCredentialsChanged?: t.UserConnectionContext['onOAuthCredentialsChanged'];
     onOAuthCredentialsChanging?: t.UserConnectionContext['onOAuthCredentialsChanging'];
     mcpApps?: TMCPAppsPolicy;
+    transferFiles?: MCPBoundFileTransfer;
   }): Promise<t.FormattedToolResponse> {
     if (scheduledBearerInvocation) requestScopedConnections = scheduledBearerInvocation.context;
     const userId = user?.id;
@@ -2125,7 +2129,13 @@ Please follow these instructions when using tools from the respective MCP server
           await this.updateUserLastActivity(userId);
         }
         this.checkIdleConnections();
-        const toolResult = result as t.MCPToolCallResponse;
+        const rawToolResult = result as t.MCPToolCallResponse;
+        const transferred = transferFiles
+          ? await transferFiles(rawToolResult, rawConfig?.fileTransfer)
+          : undefined;
+        const toolResult = transferred
+          ? { ...rawToolResult, content: transferred.content }
+          : rawToolResult;
         const admittedMCPApps = mcpApps ?? DEFAULT_MCP_APPS_POLICY;
 
         // The app routes reject OBO, Graph-token, and runtime body-placeholder configs, so do not
@@ -2239,20 +2249,23 @@ Please follow these instructions when using tools from the respective MCP server
         }
 
         return markMCPToolResultError(
-          formatToolContent(
-            toolResult,
-            provider,
-            appCompatible
-              ? {
-                  serverName,
-                  toolName,
-                  resourceUri: resourceMeta?.uri,
-                  resolvedAppResource,
-                  serverBinding,
-                  toolArgs: toolArguments,
-                  mcpApps: admittedMCPApps,
-                }
-              : { mcpApps: admittedMCPApps },
+          mergeMCPFileTransfer(
+            formatToolContent(
+              toolResult,
+              provider,
+              appCompatible
+                ? {
+                    serverName,
+                    toolName,
+                    resourceUri: resourceMeta?.uri,
+                    resolvedAppResource,
+                    serverBinding,
+                    toolArgs: toolArguments,
+                    mcpApps: admittedMCPApps,
+                  }
+                : { mcpApps: admittedMCPApps },
+            ),
+            transferred,
           ),
           toolResult?.isError === true,
         );
