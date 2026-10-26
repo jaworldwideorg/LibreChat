@@ -1,8 +1,10 @@
 {
   "upstreamTag": "v0.8.8",
   "upstreamCommit": "e8f3be08623663d4ad7f7241e693c94469b63bb0",
-  "releaseTag": "v0.8.8-ja.1",
+  "releaseTag": "v0.8.8-ja.2",
   "dependencyLockSha256": "af5f9a7a73a1ec056f796eea736a3e0026b5c7c53813439f093ec51b2a7cb023",
-  "acceptedHighCriticalAuditSha256": "9da1f1e0655531b78524cd4c33096f7df6331a4df15191c9d0d6b35bc7dc618c",
-  "auditAcceptedOn": "2026-10-15"
+  "acceptedHighCriticalAuditSha256": "69532da042e588a338511700051711263c1804a7e380d64ebf3a599a4882536e",
+  "auditAcceptedOn": "2026-10-26",
+  "agentsRepository": "jaworldwideorg/agents",
+  "agentsCommit": "7ef2be0eec1c3e510e1771127a0b68b5e16afa01"
 }

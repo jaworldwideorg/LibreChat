@@ -193,3 +193,7 @@ scripts/activity-labels/results/
 !e2e/lighthouse/librechat.yaml
 /.lighthouse/
 /e2e/lighthouse/.test-results/
+
+# Generated pinned JA agents SDK build context
+.ja-agents/
+Dockerfile.ja.generated

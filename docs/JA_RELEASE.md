@@ -3,7 +3,7 @@
 This fork release uses upstream `v0.8.8`, commit
 `e8f3be08623663d4ad7f7241e693c94469b63bb0`, matching the build metadata
 reported by the current production Container App. It backports the embedded MCP
-file handoff and keeps the upstream frontend and dependency lock unchanged.
+file handoff and keeps the upstream frontend and application dependency lock unchanged. The pinned JA agents SDK build is included separately.
 
 ## Registry and credentials
 
@@ -36,7 +36,7 @@ labels identify the exact organization commit. Preserve the current revision's
 configuration, branding mounts, secrets, scale and resources during a switch.
 
 The existing v0.8.8 audit findings were explicitly accepted for this release on
-October 15, 2026: 2 critical and 9 high findings remain. This is not an audit-clean
+October 26, 2026: 4 critical and 12 high findings remain. This is not an audit-clean
 release. `ci/ja-release.json` pins the dependency lock and the accepted high/critical
 finding fingerprint; new high/critical findings or a changed lock require review.
 The complete npm audit report is retained as a workflow artifact. This policy
@@ -84,3 +84,5 @@ Primary references: [MCP embedded tool resources](https://modelcontextprotocol.i
 [ACR repository-scoped tokens](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-repository-scoped-permissions),
 [ACA revisions](https://learn.microsoft.com/en-us/azure/container-apps/revisions),
 and [ACA containers](https://learn.microsoft.com/en-us/azure/container-apps/containers).
+
+The v0.8.8-ja.2 release pins JA agents source 7ef2be0eec1c3e510e1771127a0b68b5e16afa01 (upstream 4.1.0), builds its locked tree, and includes its package metadata and dist in every backend build stage. Application and SDK source provenance are retained in ci/ja-release.json.
