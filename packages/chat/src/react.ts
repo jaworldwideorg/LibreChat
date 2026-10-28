@@ -109,3 +109,5 @@ export {
   shouldRollbackReveal,
   buildRevealedMessage,
 } from './react/steering/useQueuedTurnReveal';
+export { ReactQueryChatState } from './react/state';
+export type { ReactQueryChatStateOptions } from './react/state';
