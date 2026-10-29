@@ -2715,6 +2715,12 @@ export const outboundTimeoutsSchema = z.object({
   moderationMs: outboundTimeoutMs,
   /** Fetching a stored image by URL to encode it for a provider. */
   imageFetchMs: outboundTimeoutMs,
+  /** Each call a built-in tool makes to its API (weather, Wolfram, web search). */
+  toolsMs: outboundTimeoutMs,
+  /** Each text-to-speech or speech-to-text provider request. */
+  speechMs: outboundTimeoutMs,
+  /** Each Stable Diffusion image generation request. */
+  imageGenerationMs: outboundTimeoutMs,
 });
 
 /** Retention for the write-only GENERAL violation log kept per user. */
@@ -2724,6 +2730,25 @@ export const violationLogSchema = z.object({
 });
 
 export type TOutboundTimeouts = z.infer<typeof outboundTimeoutsSchema>;
+
+const lookupConcurrency = z.number().int().min(1).max(32).optional();
+
+/** Upper bounds on independent lookups a request runs at once. Omitted keys use the server
+ *  defaults (`DEFAULT_LOOKUP_CONCURRENCY` in `@librechat/api`); `1` restores serial lookups. */
+export const lookupConcurrencySchema = z.object({
+  /** Connected agents initialized together per level while discovering a handoff graph. */
+  connectedAgentLoads: lookupConcurrency,
+  /** MCP tool catalog reads when assembling an ephemeral or added agent. */
+  mcpCatalogLookups: lookupConcurrency,
+  /** Model spec skill name resolutions. */
+  skillNameLookups: lookupConcurrency,
+  /** Bundled skill file inspections before a skill is primed. */
+  skillFileInspections: lookupConcurrency,
+  /** Agent reads while building the resume snapshot of a paused run. */
+  resumeAgentLoads: lookupConcurrency,
+});
+
+export type TLookupConcurrency = z.infer<typeof lookupConcurrencySchema>;
 
 export const rateLimitSchema = z.object({
   twoFactorManagement: z
@@ -3160,6 +3185,11 @@ export const interfaceSchema = z
      *  default; a deployment that cannot use popups can turn it off and keep
      *  the docked pane. */
     artifactUndocking: z.boolean().optional(),
+    /** Asks each viewer for consent before Google Tag Manager (`ANALYTICS_GTM_ID`)
+     *  loads. A deployment that settles consent itself, such as an internal one
+     *  covered by its own policy, can set false to load the container without the
+     *  banner or the Settings toggle. */
+    analyticsConsent: z.boolean().optional(),
     feedback: z.boolean().optional(),
     currency: z
       .object({
@@ -3770,7 +3800,12 @@ export type TStartupConfig = {
 
 export type TSharedLinkStartupInterface = Pick<
   Partial<TInterfaceConfig>,
-  'privacyPolicy' | 'termsOfService' | 'codeHighlightThrottleMs' | 'theme' | 'artifactUndocking'
+  | 'privacyPolicy'
+  | 'termsOfService'
+  | 'codeHighlightThrottleMs'
+  | 'theme'
+  | 'artifactUndocking'
+  | 'analyticsConsent'
 >;
 
 export type TSharedLinkStartupConfig = Pick<TStartupConfig, 'appTitle'> &
@@ -4690,6 +4725,7 @@ export const configSchema = z.object({
       maxPageSize: z.number().int().min(1).max(10000).optional(),
     })
     .optional(),
+  concurrency: lookupConcurrencySchema.optional(),
   fileConfig: fileConfigSchema.optional(),
   modelSpecs: specsConfigSchema.optional(),
   filters: filtersConfigSchema.optional(),
