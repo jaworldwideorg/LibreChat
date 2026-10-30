@@ -2,12 +2,14 @@ import { StandardGraph } from '@librechat/agents';
 import { StepTypes, readScheduleMCPReceipts } from 'librechat-data-provider';
 import type { Agents } from 'librechat-data-provider';
 import type { Redis, Cluster } from 'ioredis';
+import type { RedisClientsModule } from '../../cache/__tests__/redisClients.helper';
 import type { SteerQueueItem, SteerReceipt } from '../interfaces/IJobStore';
 import {
   JobStatusTransitionDeadlineError,
   PAUSE_PERSISTENCE_TIMEOUT_ERROR,
   STEER_ENQUEUE_RECEIPT_FULL,
 } from '../interfaces/IJobStore';
+import { closeRedisClients } from '../../cache/__tests__/redisClients.helper';
 import { clearRedisTestPrefix } from './helpers/redis';
 
 /** Suppress winston Console transport output (survives jest.resetModules) */
@@ -26,6 +28,7 @@ jest.spyOn(console, 'log').mockImplementation();
  */
 describe('RedisJobStore Integration Tests', () => {
   let originalEnv: NodeJS.ProcessEnv;
+  let redisClientsModule: RedisClientsModule;
   let ioredisClient: Redis | Cluster | null = null;
   const testPrefix = 'Stream-Integration-Test';
 
@@ -55,7 +58,8 @@ describe('RedisJobStore Integration Tests', () => {
     jest.resetModules();
 
     // Import Redis client
-    const { ioredisClient: client } = await import('../../cache/redisClients');
+    redisClientsModule = await import('../../cache/redisClients');
+    const { ioredisClient: client } = redisClientsModule;
     ioredisClient = client;
 
     if (!ioredisClient) {
@@ -90,6 +94,7 @@ describe('RedisJobStore Integration Tests', () => {
         }
       }
     }
+    await closeRedisClients(redisClientsModule);
     process.env = originalEnv;
   });
 
@@ -1584,6 +1589,9 @@ describe('RedisJobStore Integration Tests', () => {
         },
         agentEventLegacyTurnToken: 'legacy-hitl-token',
         discoveredTools: ['deep_tool'],
+        authoredSkills: [
+          { agentId: 'a', name: 'new-skill', id: '507f1f77bcf86cd799439011', primed: true },
+        ],
         userSubmittedPaths: ['/content/0/tool_call/args'],
         userSubmittedMessageFieldPaths: [{ path: '/content/0/tool_call/output', field: 'answer' }],
       });
@@ -1603,6 +1611,7 @@ describe('RedisJobStore Integration Tests', () => {
       });
       expect(turn1?.agentEventLegacyTurnToken).toBe('legacy-hitl-token');
       expect(turn1?.discoveredTools).toEqual(['deep_tool']);
+      expect(turn1?.authoredSkills).toHaveLength(1);
       expect(turn1?.userSubmittedPaths).toEqual(['/content/0/tool_call/args']);
       expect(turn1?.userSubmittedMessageFieldPaths).toEqual([
         { path: '/content/0/tool_call/output', field: 'answer' },
@@ -1623,6 +1632,7 @@ describe('RedisJobStore Integration Tests', () => {
       expect(turn2?.agentEventSuspension).toBeUndefined();
       expect(turn2?.agentEventLegacyTurnToken).toBeUndefined();
       expect(turn2?.discoveredTools).toBeUndefined();
+      expect(turn2?.authoredSkills).toBeUndefined();
       expect(turn2?.userSubmittedPaths).toBeUndefined();
       expect(turn2?.userSubmittedMessageFieldPaths).toBeUndefined();
 

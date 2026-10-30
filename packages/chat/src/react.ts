@@ -1,6 +1,10 @@
 /** React bindings for the core `Chat`: providers and `useChat`. Populated as the hooks move in. */
 export * from './react/chat';
 export * from './react/stream';
+export * from './react/subagents';
+export * from './react/usage';
+export * from './react/thread';
+export * from './react/approval';
 export { MessageContext, MessagePartIndex, useMessageContext } from './react/message';
 export {
   useMessagePartsHost,
@@ -125,3 +129,37 @@ export {
   setDefaultMessagesHost,
 } from './react/messages/host';
 export type { MessagesHost } from './react/messages/host';
+export {
+  SoleToolContext,
+  LoneGroupContext,
+  useToolExpansion,
+  useToolAutoExpand,
+  useToolDisclosure,
+  reasoningDisclosure,
+  ToolDisclosureContext,
+  useToolContentPending,
+  useToolContentRequest,
+  useReasoningDisclosure,
+  ToolContentQueryContext,
+  ToolDisclosureKeyContext,
+  ToolContentPendingContext,
+  ToolContentRequestContext,
+  toolPanelSpacingClassName,
+  ReasoningDisclosureContext,
+} from './react/parts/disclosure';
+export type {
+  ToolDisclosures,
+  ToolContentQuery,
+  ReasoningDisclosures,
+} from './react/parts/disclosure';
+export { boundIntentLabel, getToolCallIntent, useToolCallIntent } from './react/parts/intent';
+export { default as useFollowScroll } from './react/parts/useFollowScroll';
+export { default as useRowHandoff } from './react/parts/handoff';
+export { useFilesHost, FilesHostProvider } from './react/files';
+export type { FilesHost } from './react/files';
+export { default as useReducedMotion } from './react/motion';
+export { default as useElementSize } from './react/size';
+export { default as useAudioLevels, frameLevel } from './react/levels';
+export { default as useInitPopoverInput } from './react/popover';
+export { useComposerHost, ComposerHostProvider } from './react/input';
+export type { ComposerHost, ComposerShortcutAction } from './react/input';
