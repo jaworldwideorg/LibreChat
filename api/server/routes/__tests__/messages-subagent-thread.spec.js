@@ -6,6 +6,7 @@ const mockIsSubagentThreadWriteBlocked = jest.fn();
 jest.mock('@librechat/agents', () => ({ sleep: jest.fn() }));
 
 jest.mock('@librechat/api', () => ({
+  presentStoredFileRefs: jest.fn(async (value) => value),
   withoutTraceRefs: jest.fn((message) => message),
   createContentFilter: jest.fn(() => (_req, _res, next) => next()),
   unescapeLaTeX: jest.fn((value) => value),

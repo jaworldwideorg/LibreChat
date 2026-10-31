@@ -51,6 +51,7 @@ jest.mock('@librechat/api', () => {
   };
 
   return {
+    presentStoredFileRefs: jest.fn(async (value) => value),
     /** The real helper, without loading the rest of the package this suite mocks around. */
     withoutTraceRefs: jest.requireActual('../../../../packages/api/src/langfuse/trace.ts')
       .withoutTraceRefs,
@@ -233,6 +234,7 @@ describe('message route conversation ownership filters', () => {
     assertModelBoundContent,
     hasActiveFilePolicy,
     resolveCanonicalFileReferences,
+    presentStoredFileRefs,
   } = require('@librechat/api');
   const {
     findAllArtifacts,
@@ -619,6 +621,10 @@ describe('message route conversation ownership filters', () => {
       const response = await request(app).get(`/api/messages?${query}`);
 
       expect(response.status).toBe(200);
+      expect(presentStoredFileRefs).toHaveBeenCalledWith(
+        expect.objectContaining({ messages: [] }),
+        authenticatedUserId,
+      );
       expect(searchMessages).toHaveBeenCalledWith(
         'needle',
         { filter: `user = "${authenticatedUserId}"`, limit: searchLimit },
@@ -860,6 +866,7 @@ describe('message route conversation ownership filters', () => {
     );
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: 'Conversation not found' });
+    expect(presentStoredFileRefs).not.toHaveBeenCalled();
   });
 
   it('should filter single message reads by authenticated user', async () => {

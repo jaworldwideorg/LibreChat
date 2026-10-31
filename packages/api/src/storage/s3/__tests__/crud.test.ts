@@ -1212,6 +1212,48 @@ describe('S3 CRUD', () => {
   });
 
   describe('needsRefresh', () => {
+    it('signs owned message references and refuses another owner or foreign host', async () => {
+      const { presentOwnedS3Url } = await import('../crud');
+      const own = 'https://test-bucket.s3.us-east-1.amazonaws.com/images/user123/file.png';
+      expect(await presentOwnedS3Url(own, 'user123')).toContain('signed=true');
+      expect(getSignedUrl).toHaveBeenCalledTimes(1);
+      expect(await presentOwnedS3Url(own, 'other-user')).toBe(own);
+      const foreign = 'https://foreign.s3.us-east-1.amazonaws.com/images/user123/file.png';
+      expect(await presentOwnedS3Url(foreign, 'user123')).toBe(foreign);
+      expect(await presentOwnedS3Url(own, '')).toBe(own);
+      expect(getSignedUrl).toHaveBeenCalledTimes(1);
+    });
+
+    it('retains compound tenant/region key identity when signing owned history', async () => {
+      const { presentOwnedS3Url } = await import('../crud');
+      const own =
+        'https://test-bucket.s3.us-east-1.amazonaws.com/r/eu-central-1/t/tenantA/uploads/user123/file.pdf';
+      await presentOwnedS3Url(own, 'user123');
+      expect(getSignedUrl).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          input: expect.objectContaining({
+            Key: 'r/eu-central-1/t/tenantA/uploads/user123/file.pdf',
+          }),
+        }),
+        expect.anything(),
+      );
+    });
+    it('signs canonical references only for the configured S3 bucket', async () => {
+      const { needsRefresh } = await import('../crud');
+      expect(
+        needsRefresh('https://test-bucket.s3.us-east-1.amazonaws.com/images/user/file.png', 0),
+      ).toBe(true);
+      expect(
+        needsRefresh('https://foreign-bucket.s3.us-east-1.amazonaws.com/images/user/file.png', 0),
+      ).toBe(false);
+      expect(
+        needsRefresh(
+          'https://test-bucket.s3.us-east-1.amazonaws.com.attacker.test/images/user/file.png',
+          0,
+        ),
+      ).toBe(false);
+    });
     it('returns false for non-signed URLs', async () => {
       const { needsRefresh } = await import('../crud');
       const result = needsRefresh('https://example.com/file.png', 3600);
@@ -1301,6 +1343,29 @@ describe('S3 CRUD', () => {
   });
 
   describe('refreshS3FileUrls', () => {
+    it('returns signed response URLs without replacing durable references in response-only mode', async () => {
+      const { refreshS3FileUrls } = await import('../crud');
+      const files = [
+        {
+          file_id: 'native-file',
+          source: FileSources.s3,
+          filepath: 'https://test-bucket.s3.us-east-1.amazonaws.com/images/user123/file.jpg',
+          storageKey: 'images/user123/file.jpg',
+        },
+      ];
+      const update = jest.fn();
+      const result = await refreshS3FileUrls(files as TFile[], update, 0, false);
+      expect(result[0].filepath).toContain('signed=true');
+      expect(files[0].filepath).not.toContain('signed=true');
+      expect(update).not.toHaveBeenCalled();
+      expect(getSignedUrl).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          input: expect.objectContaining({ Key: 'images/user123/file.jpg' }),
+        }),
+        expect.anything(),
+      );
+    });
     it('refreshes expired URLs for multiple files', async () => {
       const { refreshS3FileUrls } = await import('../crud');
 

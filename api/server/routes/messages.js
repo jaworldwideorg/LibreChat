@@ -27,6 +27,7 @@ const {
   mergeUserSubmittedMessageFieldPaths,
   isContentFilterError,
   withoutTraceRefs,
+  presentStoredFileRefs,
 } = require('@librechat/api');
 const subagentThreadTaskStore = require('~/server/services/Endpoints/agents/subagentThreadStore');
 const { findAllArtifacts, replaceArtifactContent } = require('~/server/services/Artifacts/update');
@@ -211,7 +212,7 @@ router.get('/', async (req, res) => {
       response = { messages: [], nextCursor: null };
     }
 
-    res.status(200).json(response);
+    res.status(200).json(await presentStoredFileRefs(response, user));
   } catch (error) {
     logger.error('Error fetching messages:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -511,7 +512,7 @@ router.get('/:conversationId', prepareMessageRequestValidation, async (req, res)
     }
 
     const messages = messagesResult?.messages ?? [];
-    res.status(200).json(messages);
+    res.status(200).json(await presentStoredFileRefs(messages, req.user.id));
   } catch (error) {
     logger.error('Error fetching messages:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -572,7 +573,7 @@ router.get('/:conversationId/:messageId', validateMessageReq, async (req, res) =
     if (!message) {
       return res.status(404).json({ error: 'Message not found' });
     }
-    res.status(200).json(message);
+    res.status(200).json(await presentStoredFileRefs(message, req.user.id));
   } catch (error) {
     logger.error('Error fetching message:', error);
     res.status(500).json({ error: 'Internal server error' });

@@ -7,6 +7,7 @@ jest.mock('@librechat/agents', () => ({
 }));
 
 jest.mock('@librechat/api', () => ({
+  presentStoredFileRefs: jest.fn(async (value) => value),
   unescapeLaTeX: jest.fn((value) => value),
   countTokens: jest.fn().mockResolvedValue(2),
   createContentFilter: jest.fn(() => (_req, _res, next) => next()),

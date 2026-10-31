@@ -57,6 +57,7 @@ import { deleteRagFile } from '~/files';
 import { s3Config } from './s3Config';
 
 const {
+  AWS_REGION: region,
   AWS_BUCKET_NAME: bucketName,
   AWS_ENDPOINT_URL: endpoint,
   AWS_FORCE_PATH_STYLE: forcePathStyle,
@@ -886,12 +887,60 @@ export async function getS3DownloadURL({
   return getS3URLForKey({ key, customFilename, contentType });
 }
 
+export function isManagedS3Url(value: string): boolean {
+  try {
+    if (!bucketName) {
+      return false;
+    }
+    const url = new URL(value);
+    const hosts = new Set([
+      `${bucketName}.s3.amazonaws.com`,
+      `${bucketName}.s3.${region}.amazonaws.com`,
+      `${bucketName}.s3-${region}.amazonaws.com`,
+    ]);
+    if (
+      url.protocol === 'https:' &&
+      hosts.has(url.hostname) &&
+      !url.username &&
+      !url.password &&
+      !url.port
+    ) {
+      return true;
+    }
+    if (!endpoint) {
+      return false;
+    }
+    const configured = new URL(endpoint);
+    const prefix = `${configured.pathname.replace(/\/$/, '')}/${bucketName}/`;
+    return (
+      url.origin === configured.origin &&
+      url.pathname.startsWith(prefix) &&
+      !url.username &&
+      !url.password
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Sign an owned reference only after its enclosing response is authorized. */
+export async function presentOwnedS3Url(filepath: string, ownerId: string): Promise<string> {
+  if (!ownerId || !isManagedS3Url(filepath) || !needsRefresh(filepath, 0)) {
+    return filepath;
+  }
+  const key = extractKeyFromS3Url(filepath);
+  if (parseS3Key(key)?.userId !== ownerId) {
+    return filepath;
+  }
+  return (await getNewS3URL(filepath, key)) ?? filepath;
+}
+
 export function needsRefresh(signedUrl: string, bufferSeconds: number): boolean {
   try {
     const url = new URL(signedUrl);
 
     if (!url.searchParams.has('X-Amz-Signature')) {
-      return false;
+      return isManagedS3Url(signedUrl);
     }
 
     const expiresParam = url.searchParams.get('X-Amz-Expires');
@@ -950,6 +999,7 @@ export async function refreshS3FileUrls(
   files: TFile[] | null | undefined,
   batchUpdateFiles: BatchUpdateFn,
   bufferSeconds = 3600,
+  persistUpdates = true,
 ): Promise<TFile[]> {
   if (!files || !Array.isArray(files) || files.length === 0) {
     return [];
@@ -997,7 +1047,7 @@ export async function refreshS3FileUrls(
     }
   }
 
-  if (filesToUpdate.length > 0) {
+  if (persistUpdates && filesToUpdate.length > 0) {
     await batchUpdateFiles(filesToUpdate);
   }
 
