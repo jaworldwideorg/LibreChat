@@ -1,5 +1,5 @@
-import { presentStoredFileRefs } from './presentation';
-import { presentOwnedS3Url } from './s3/crud';
+import { presentFileUrls, presentStoredFileRefs } from './presentation';
+import { presentOwnedS3Url, refreshS3FileUrls } from './s3/crud';
 
 jest.mock('./s3/crud', () => ({
   presentOwnedS3Url: jest.fn(async (path: string) => `${path}?signed`),
@@ -8,6 +8,15 @@ jest.mock('./s3/crud', () => ({
 
 describe('stored file reference presentation', () => {
   beforeEach(() => jest.clearAllMocks());
+
+  it('presents stored S3 files independently of the current upload preference', async () => {
+    const files = [{ file_id: 'stored', source: 's3', filepath: 'canonical' }];
+    const signed = [{ ...files[0], filepath: 'signed' }];
+    (refreshS3FileUrls as jest.Mock).mockResolvedValueOnce(signed);
+    expect(await presentFileUrls(files as Parameters<typeof presentFileUrls>[0])).toEqual(signed);
+    expect(refreshS3FileUrls).toHaveBeenCalledWith(files, expect.any(Function), 0, false);
+    expect(files[0].filepath).toBe('canonical');
+  });
 
   it('signs history and content attachments without altering persisted input', async () => {
     const response = {

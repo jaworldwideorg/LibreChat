@@ -1,12 +1,10 @@
-import { FileSources } from 'librechat-data-provider';
 import type { TFile } from 'librechat-data-provider';
 import { presentOwnedS3Url, refreshS3FileUrls } from './s3/crud';
 
 /** Resolve response-only download URLs without replacing durable storage references. */
-export async function presentFileUrls(files: TFile[], strategy: FileSources): Promise<TFile[]> {
-  if (strategy !== FileSources.s3) {
-    return files;
-  }
+export async function presentFileUrls(files: TFile[]): Promise<TFile[]> {
+  // The stored source controls reading: an upload preference can change while
+  // existing files continue to live in S3 or another backend.
   return refreshS3FileUrls(files, async () => undefined, 0, false);
 }
 

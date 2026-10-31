@@ -70,9 +70,8 @@ const isAgentToolResourceKey = (toolResource) =>
 
 router.get('/', async (req, res) => {
   try {
-    const appConfig = req.config;
     const files = await db.getFiles({ user: req.user.id });
-    res.status(200).send(await presentFileUrls(files, appConfig.fileStrategy));
+    res.status(200).send(await presentFileUrls(files));
   } catch (error) {
     logger.error('[/files] Error getting files:', error);
     res.status(400).json({ message: 'Error in request', error: error.message });
