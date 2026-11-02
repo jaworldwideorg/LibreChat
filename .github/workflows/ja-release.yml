@@ -1,33 +1,21 @@
-name: JA LibreChat release
-
+name: Publish tested AWS release
 on:
   push:
-    branches: [fixes/ja-v0.8.8-ptc-subagents]
+    tags: ['v*-ja.*']
   workflow_dispatch:
-    inputs:
-      publish:
-        description: Publish the verified JA image to ACR (does not deploy ACA)
-        type: boolean
-        default: false
-
+  pull_request:
+    paths: ['.github/workflows/ja-release.yml']
 permissions:
   contents: read
-
 concurrency:
-  group: ja-release-${{ github.ref }}
+  group: aws-release-${{ github.ref }}
   cancel-in-progress: false
-
-env:
-  SCARF_ANALYTICS: 'false'
-  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
-  IMAGE_NAME: librechat/api
-
 jobs:
   verify:
-    if: github.repository == 'jaworldwideorg/LibreChat'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
+      - uses: actions/checkout@v7
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -83,11 +71,14 @@ jobs:
           name: ja-dependency-audit
           path: ja-audit.json
           if-no-files-found: ignore
-
-  container:
+  publish:
     needs: verify
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -98,58 +89,37 @@ jobs:
           repository: jaworldwideorg/agents
           ref: 7ef2be0eec1c3e510e1771127a0b68b5e16afa01
           path: .ja-agents
-      - name: Build pinned agents SDK
-        working-directory: .ja-agents
+      - name: Prepare existing pinned SDK build
         run: |
+          cd .ja-agents
           npm ci --no-audit
           npm run build
           printf '*\n!dist\n!dist/**\n!package.json\n' > .dockerignore
-      - name: Generate pinned-SDK Dockerfile
-        run: node scripts/ja-docker.mjs
+          cd ..
+          node scripts/ja-docker.mjs
       - uses: docker/setup-buildx-action@v4
-      - name: Log in with the project-scoped publisher token
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
-        uses: docker/login-action@v4
+      - uses: aws-actions/configure-aws-credentials@v5
         with:
-          registry: ${{ env.ACR_LOGIN_SERVER }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-      - name: Stamp immutable build metadata
-        id: metadata
+          role-to-assume: arn:aws:iam::467816190573:role/github-librechat-images
+          aws-region: eu-central-1
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Validate immutable JA release version
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
         run: |
-          printf 'date=%s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
-      - name: Build and optionally publish the production API image
-        id: image
-        uses: docker/build-push-action@v7
+          [[ "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-ja\.[0-9]+$ ]]
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.ja.generated
           build-contexts: agents_sdk=./.ja-agents
           target: api-build
           platforms: linux/amd64
-          push: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
-          tags: |
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:v0.8.8-ja.2
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          push: true
+          tags: 467816190573.dkr.ecr.eu-central-1.amazonaws.com/oneja/librechat/librechat:${{ github.ref_name }}
           build-args: |
             BUILD_COMMIT=${{ github.sha }}
-            BUILD_BRANCH=v0.8.8-ja.2
-            BUILD_DATE=${{ steps.metadata.outputs.date }}
+            BUILD_BRANCH=${{ github.ref_name }}
           labels: |
-            org.opencontainers.image.source=https://github.com/jaworldwideorg/LibreChat
+            org.opencontainers.image.version=${{ github.ref_name }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=v0.8.8-ja.2
-          cache-from: type=gha,scope=ja-librechat-api
-          cache-to: type=gha,scope=ja-librechat-api,mode=max
-      - name: Record published digest
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
-        env:
-          DIGEST: ${{ steps.image.outputs.digest }}
-        run: |
-          printf '%s/%s@%s\n' "$ACR_LOGIN_SERVER" "$IMAGE_NAME" "$DIGEST" > ja-image-reference.txt
-          cat ja-image-reference.txt >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v7
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
-        with:
-          name: ja-image-reference
-          path: ja-image-reference.txt
