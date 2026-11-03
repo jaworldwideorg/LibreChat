@@ -3,8 +3,10 @@
   "upstreamCommit": "e8f3be08623663d4ad7f7241e693c94469b63bb0",
   "releaseTag": "v0.8.8-ja.2",
   "dependencyLockSha256": "af5f9a7a73a1ec056f796eea736a3e0026b5c7c53813439f093ec51b2a7cb023",
-  "acceptedHighCriticalAuditSha256": "69532da042e588a338511700051711263c1804a7e380d64ebf3a599a4882536e",
-  "auditAcceptedOn": "2026-10-26",
-  "agentsRepository": "jaworldwideorg/agents",
-  "agentsCommit": "7ef2be0eec1c3e510e1771127a0b68b5e16afa01"
+  "acceptedHighCriticalAuditSha256": "bdc19936e0a25b9e5a749ae146ecc1ee1283c8aaad73190a113e08e8ed336507",
+  "auditAcceptedOn": "2026-11-03",
+  "agentsRepository": "jaworldwideorg/LibreChat-Agents",
+  "agentsCommit": "7ef2be0eec1c3e510e1771127a0b68b5e16afa01",
+  "auditBaselineRelease": "v0.8.8-ja.2",
+  "auditBaselineCommit": "36e7a614ee14bd456197b3c471572c6c1dac8104"
 }

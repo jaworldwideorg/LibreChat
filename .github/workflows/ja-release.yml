@@ -16,7 +16,6 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v6
@@ -28,7 +27,7 @@ jobs:
           python-version: '3.12'
       - uses: actions/checkout@v7
         with:
-          repository: jaworldwideorg/agents
+          repository: jaworldwideorg/LibreChat-Agents
           ref: 7ef2be0eec1c3e510e1771127a0b68b5e16afa01
           path: .ja-agents
       - name: Build pinned agents SDK
@@ -60,7 +59,7 @@ jobs:
         run: |
           (cd packages/data-provider && npx jest specs/config-schemas.spec.ts --runInBand --coverage=false)
           npm run test:config -- --runInBand
-      - name: Audit dependencies against the accepted upstream baseline
+      - name: Audit dependencies against the accepted production baseline
         run: |
           node --test scripts/ja-audit.test.mjs
           npm audit --omit=dev --json > ja-audit.json || test "$?" -eq 1
@@ -86,7 +85,7 @@ jobs:
           node-version: 24.22.1
       - uses: actions/checkout@v7
         with:
-          repository: jaworldwideorg/agents
+          repository: jaworldwideorg/LibreChat-Agents
           ref: 7ef2be0eec1c3e510e1771127a0b68b5e16afa01
           path: .ja-agents
       - name: Prepare existing pinned SDK build
