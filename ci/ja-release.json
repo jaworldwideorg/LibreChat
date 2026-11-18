@@ -1,13 +1,9 @@
 {
-  "upstreamTag": "v0.8.8",
-  "upstreamCommit": "e8f3be08623663d4ad7f7241e693c94469b63bb0",
-  "releaseTag": "v0.8.8-ja.4",
-  "dependencyLockSha256": "af5f9a7a73a1ec056f796eea736a3e0026b5c7c53813439f093ec51b2a7cb023",
-  "acceptedHighCriticalAuditSha256": "80cbc822f04e5eb79814e94fbc78b1fc4067d8791d0f74ad646d5b8788ca787c",
-  "auditAcceptedOn": "2026-11-16",
+  "upstreamTag": "v0.8.9",
+  "upstreamCommit": "d4e85d2205c78413ee27d631d7e3b7313556f21d",
+  "releaseTag": "v0.8.9-ja.1",
+  "dependencyLockSha256": "896a75acf791e4a70203a0bc7ee31f865fd3ade85621cf0249fa7b52f6c419da",
+  "acceptedHighCriticalAuditSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "agentsRepository": "jaworldwideorg/LibreChat-Agents",
-  "agentsCommit": "7ef2be0eec1c3e510e1771127a0b68b5e16afa01",
-  "auditBaselineRelease": "v0.8.8-ja.2",
-  "auditBaselineCommit": "36e7a614ee14bd456197b3c471572c6c1dac8104",
-  "acceptedAuditReportRun": "https://github.com/jaworldwideorg/LibreChat/actions/runs/43828954839"
+  "agentsCommit": "cf1b17c6563a63f96cf2c74ff8c54c42e4e8522b"
 }
