@@ -13,14 +13,16 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
-          node-version: 24.22.1
+          node-version: 24.22.3
           cache: npm
       - uses: actions/setup-python@v6
         with:
@@ -28,7 +30,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: jaworldwideorg/LibreChat-Agents
-          ref: 7ef2be0eec1c3e510e1771127a0b68b5e16afa01
+          ref: cf1b17c6563a63f96cf2c74ff8c54c42e4e8522b
           path: .ja-agents
       - name: Build pinned agents SDK
         working-directory: .ja-agents
@@ -46,7 +48,7 @@ jobs:
         run: npm run frontend
       - name: Check changed workspaces and static rules
         run: |
-          npm run static-checks -- --against v0.8.8
+          npm run static-checks -- --against v0.8.9
           (cd packages/api && npx tsc --noEmit)
           (cd packages/data-provider && npx tsc --noEmit)
       - name: Test attachment handoff and session continuity
@@ -82,11 +84,11 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
-          node-version: 24.22.1
+          node-version: 24.22.3
       - uses: actions/checkout@v7
         with:
           repository: jaworldwideorg/LibreChat-Agents
-          ref: 7ef2be0eec1c3e510e1771127a0b68b5e16afa01
+          ref: cf1b17c6563a63f96cf2c74ff8c54c42e4e8522b
           path: .ja-agents
       - name: Prepare existing pinned SDK build
         run: |
